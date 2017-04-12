@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace DocBro
@@ -32,12 +33,15 @@ namespace DocBro
 	public static class Util
 	{
 		private static readonly Dictionary<Type, string> primitiveNames;
+		private static readonly Dictionary<string, string> operations;
 
 		static Util()
 		{
 			primitiveNames = new Dictionary<Type, string>
 			{
+				{ typeof(char), "char" },
 				{ typeof(string), "string" },
+				{ typeof(bool), "bool" },
 				{ typeof(int), "int" },
 				{ typeof(long), "long" },
 				{ typeof(float), "float" },
@@ -49,7 +53,51 @@ namespace DocBro
 				{ typeof(uint), "uint" },
 				{ typeof(ulong), "ulong" },
 				{ typeof(ushort), "ushort" },
-				{ typeof(object), "object" }
+				{ typeof(object), "object" },
+				{ typeof(void), "void" }
+			};
+
+			operations = new Dictionary<string, string>
+			{
+				{ "op_Implicit", "" },
+				{ "op_Explicit", "" },
+				{ "op_Addition", "+" },
+				{ "op_Subtraction", "-" },
+				{ "op_Multiply", "*" },
+				{ "op_Division", "/" },
+				{ "op_Modulus", "%" },
+				{ "op_ExclusiveOr", "^" },
+				{ "op_BitwiseAnd", "&" },
+				{ "op_BitwiseOr", "|" },
+				{ "op_LogicalAnd", "&&" },
+				{ "op_LogicalOr", "||" },
+				{ "op_LogicalNot", "!" },
+				{ "op_Assign", "=" },
+				{ "op_LeftShift", "<<" },
+				{ "op_RightShift", ">>" },
+				{ "op_SignedRightShift", "" },
+				{ "op_UnsignedRightShift", "" },
+				{ "op_Equality", "==" },
+				{ "op_GreaterThan", ">" },
+				{ "op_LessThan", "<" },
+				{ "op_Inequality", "!=" },
+				{ "op_GreaterThanOrEqual", ">=" },
+				{ "op_LessThanOrEqual", "<=" },
+				{ "op_MultiplicationAssignment", "*=" },
+				{ "op_SubtractionAssignment", "-=" },
+				{ "op_ExclusiveOrAssignment", "^=" },
+				{ "op_LeftShiftAssignment", "<<=" },
+				{ "op_ModulusAssignment", "%=" },
+				{ "op_AdditionAssignment", "+=" },
+				{ "op_BitwiseAndAssignment", "&=" },
+				{ "op_BitwiseOrAssignment", "|=" },
+				{ "op_Comma", "," },
+				{ "op_DivisionAssignment", "/=" },
+				{ "op_Decrement", "--" },
+				{ "op_Increment", "++" },
+				{ "op_UnaryNegation", "-" },
+				{ "op_UnaryPlus", "+" },
+				{ "op_OnesComplement", "~" }
 			};
 		}
 
@@ -60,10 +108,293 @@ namespace DocBro
 
 		public static string GetURLTitle(Type type)
 		{
-			
+			if (type.IsGenericType)
+			{
+				return $"{type.Name.Substring(0, type.Name.IndexOf("`"))}-{type.GetGenericArguments().Length}";
+			}
+			return type.Name;
 		}
 
-		public static string GetDisplayTitle(Type type)
+		public static string GetIdentifier(string value)
+		{
+			if (String.IsNullOrWhiteSpace(value)) return String.Empty;
+			return value.Contains("`") ? value.Substring(0, value.IndexOf("`")) : value;
+		}
+
+		public static string GetClassSignature(Type type)
+		{
+			var sb = new StringBuilder();
+			var subclass = type.BaseType;
+			var inherits = subclass != null && subclass != typeof(object);
+			var interfaces = type.GetInterfaces();
+
+			if (type.IsPublic) sb.Append("public ");
+
+			if (!type.IsEnum && !type.IsInterface)
+			{
+				if (type.IsSealed)
+				{
+					sb.Append(type.IsAbstract ? "static " : "sealed ");
+				}
+				else if (type.IsAbstract)
+				{
+					sb.Append("abstract ");
+				}
+			}
+
+			if (type.IsSubclassOf(typeof(Delegate)))
+			{
+				var method = type.GetMethod("Invoke");
+				sb.Append($"delegate {GetBuiltinName(method.ReturnType)} {GetMethodSignature(method)};");
+				return sb.ToString();
+			}
+
+			var rawName = type.Name;
+			if (rawName.Contains("`")) rawName = rawName.Substring(0, rawName.IndexOf("`"));
+
+			if (type.IsInterface)
+			{
+				sb.Append("interface ");
+			}
+			else if (type.IsEnum)
+			{
+				sb.Append("enum ");
+			}
+			else if (type.IsValueType)
+			{
+				sb.Append("struct ");
+			}
+			else
+			{
+				sb.Append("class ");
+			}
+
+			sb.Append(rawName);
+
+			if (!type.IsEnum)
+			{
+				if (inherits || interfaces.Length > 0) sb.Append(" : ");
+
+				if (inherits)
+				{
+					sb.Append(GetDisplayTitle(subclass));
+				}
+
+				if (interfaces.Length > 0)
+				{
+					if (inherits) sb.Append(", ");
+					for (int i = 0; i < interfaces.Length; i++)
+					{
+						if (i > 0) sb.Append(", ");
+						sb.Append(GetDisplayTitle(interfaces[i]));
+					}
+				}
+			}
+
+			return sb.ToString();
+		}
+
+		public static string GetPropertySignature(PropertyInfo property, bool includeKeywords = true, bool includeParamNames = true, bool includeBody = false)
+		{
+			var sb = new StringBuilder();
+			bool canRead = property.CanRead;
+			bool canWrite = property.CanWrite;
+			var getter = property.GetGetMethod(true);
+			var setter = property.GetSetMethod(true);
+			
+			if (includeKeywords)
+			{
+				if ((canRead && getter.IsPublic) || (canWrite && setter.IsPublic))
+				{
+					sb.Append("public ");
+				}
+
+				if (canRead && getter.IsStatic || canWrite && setter.IsStatic)
+				{
+					sb.Append("static ");
+				}
+				else if (canRead && getter.IsAbstract || canWrite && setter.IsAbstract)
+				{
+					sb.Append("abstract ");
+				}
+				if (property.DeclaringType != property.ReflectedType)
+				{
+					sb.Append("override ");
+				}
+				else if (canRead && getter.IsVirtual || canWrite && setter.IsVirtual)
+				{
+					sb.Append("virtual ");
+				}
+
+				sb.Append(GetDisplayTitle(property.PropertyType, false));
+				sb.Append(" ");
+			}
+
+			var ip = property.GetIndexParameters();
+			if (ip.Length > 0)
+			{
+				sb.Append("this[");
+				for (int i = 0; i < ip.Length; i++)
+				{
+					if (i > 0) sb.Append(", ");
+					sb.Append(GetDisplayTitle(ip[i], includeParamNames));
+				}
+				sb.Append("]");
+			}
+			else
+			{
+				sb.Append(property.Name);
+			}
+
+			if (includeBody)
+			{
+				sb.Append("\n{\n");
+
+				if (canRead) sb.Append("    get;\n");
+				if (canWrite) sb.Append("    set;\n");
+
+				sb.Append("}");
+			}
+
+			return sb.ToString();
+		}
+
+		public static string GetMethodSignature(MethodBase method, bool includeKeywords = false, bool includeParamNames = true)
+		{
+			var sb = new StringBuilder();
+
+			string rawName;
+			bool isConversion = false;
+
+			if (method.DeclaringType.IsSubclassOf(typeof(Delegate)))
+			{
+				rawName = method.DeclaringType.Name;
+				if (rawName.Contains("`")) rawName = rawName.Substring(0, rawName.IndexOf("`"));
+			}
+			if (method.IsConstructor)
+			{
+				rawName = GetDisplayTitle(method.DeclaringType, false);
+			}
+			else
+			{
+				rawName = method.Name;
+				var m = method as MethodInfo;
+				if (rawName.Contains("`")) rawName = rawName.Substring(0, rawName.IndexOf("`"));
+				if (rawName.StartsWith("op_") && operations.TryGetValue(rawName, out string opName))
+				{
+					if (rawName == "op_Implicit")
+					{
+						rawName = $"implicit operator {GetDisplayTitle(m.ReturnType)}";
+						isConversion = true;
+					}
+					else if (rawName == "op_Explicit")
+					{
+						rawName = $"explicit operator {GetDisplayTitle(m.ReturnType)}";
+						isConversion = true;
+					}
+					else
+					{
+						rawName = $"operator {opName}";
+					}
+				}
+			}
+
+			if (includeKeywords)
+			{
+				if (method.IsPublic) sb.Append("public ");
+				if (method.IsStatic)
+				{
+					sb.Append("static ");
+				}
+				else if (method.IsAbstract)
+				{
+					sb.Append("abstract ");
+				}
+				if (method.DeclaringType != method.ReflectedType)
+				{
+					sb.Append("override ");
+				}
+				else if (method.IsVirtual)
+				{
+					sb.Append("virtual ");
+				}
+
+				if (!isConversion && method is MethodInfo m)
+				{
+					sb.Append($"{GetDisplayTitle(m.ReturnType)} ");
+				}
+			}
+			
+			sb.Append(rawName);
+
+			if (method.IsGenericMethod)
+			{
+				sb.Append("<");
+				var gargs = method.GetGenericArguments();
+				for (int i = 0; i < gargs.Length; i++)
+				{
+					if (i > 0) sb.Append(", ");
+					sb.Append(gargs[i].Name);
+				}
+				sb.Append(">");
+			}
+			sb.Append("(");
+			var plist = method.GetParameters();
+			for (int i = 0; i < plist.Length; i++)
+			{
+				if (i > 0) sb.Append(", ");
+				sb.Append(GetDisplayTitle(plist[i], includeParamNames));
+			}
+			sb.Append(")");
+
+			return sb.ToString();
+		}
+
+		public static string GetDisplayTitle(ParameterInfo parameter, bool includeName = true)
+		{
+			var sb = new StringBuilder();
+			if (parameter.IsOut)
+			{
+				sb.Append("out ");
+			}
+			else if (parameter.ParameterType.IsByRef)
+			{
+				sb.Append("ref ");
+			}
+			else if (parameter.GetCustomAttribute<ParamArrayAttribute>() != null)
+			{
+				sb.Append("params ");
+			}
+
+			sb.Append(GetDisplayTitle(parameter.ParameterType, false));
+
+			if (includeName)
+			{
+				sb.Append($" {parameter.Name}");
+
+				if (parameter.HasDefaultValue)
+				{
+					sb.Append($" = {GetConstantValueString(parameter.RawDefaultValue)}");
+				}
+			}
+
+			return sb.ToString();
+		}
+
+		public static string GetConstantValueString(object value)
+		{
+			if (value == null) return "null";
+			var valueType = value.GetType();
+			
+			if (valueType == typeof(string)) return $"\"{value}\"";
+			if (valueType == typeof(char)) return $"'{value}'";
+			if (valueType == typeof(float)) return $"{value}f";
+			if (valueType == typeof(double)) return $"{value}d";
+
+			return value.ToString();
+		}
+
+		public static string GetDisplayTitle(Type type, bool includeNamespace = true)
 		{
 			var sb = new StringBuilder();
 			var elementType = type.GetElementType();
@@ -71,7 +402,7 @@ namespace DocBro
 				? elementType.Name
 				: type.Name;
 			var bareType = type.IsArray ? type.GetElementType() : type;
-			
+
 			if (primitiveNames.TryGetValue(bareType, out string primitiveName))
 			{
 				sb.Append(primitiveName);
@@ -79,7 +410,11 @@ namespace DocBro
 			// e.g. Dictionary<string, int>
 			else if (bareType.IsGenericType)
 			{
-				sb.Append($"{bareType.Namespace}.{bareName.Substring(0, bareType.Name.IndexOf("`", StringComparison.InvariantCulture))}");
+				if (includeNamespace)
+				{
+					sb.Append($"{bareType.Namespace}.");
+				}
+				sb.Append(bareName.Substring(0, bareType.Name.IndexOf("`", StringComparison.InvariantCulture)));
 				sb.Append('<');
 				var gargs = bareType.GetGenericArguments();
 				for (int i = 0; i < gargs.Length; i++)
@@ -98,7 +433,8 @@ namespace DocBro
 			// e.g. System.String
 			else
 			{
-				sb.Append($"{type.Namespace}.{bareName}");
+				if (includeNamespace) sb.Append($"{bareType.Namespace}.");
+				sb.Append(bareName);
 			}
 
 			// Handle array notation

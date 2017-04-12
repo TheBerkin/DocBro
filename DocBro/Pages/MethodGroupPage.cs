@@ -20,19 +20,35 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endregion
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+
 namespace DocBro
 {
-	public abstract class Page
+	public class MethodGroupPage : Page
 	{
-		public MemberData Docs { get; }
+		private readonly Type _type;
+		private readonly MethodInfo[] _methods;
 
-		public Page(MemberData xmlDocs)
+		public MethodGroupPage(Type type, IEnumerable<MethodInfo> methods) : base(null)
 		{
-			Docs = xmlDocs;
+			_type = type;
+			_methods = methods.ToArray();
+			Title = $"{Util.GetDisplayTitle(type)}.{Util.GetIdentifier(_methods[0].Name)}";
 		}
 
-		public string Title { get; protected set; }
-
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public override void Render(Node parent, MarkdownWriter writer)
+		{
+			writer.WriteHeader(1, Title);
+			writer.WriteHeader(2, "Overloads");
+			foreach (var method in _methods.OrderBy(m => m.GetParameters().Length))
+			{
+				writer.WriteLine($"- {Util.GetMethodSignature(method, false, false)}");
+			}
+		}
 	}
 }

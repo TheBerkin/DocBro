@@ -50,7 +50,7 @@ namespace DocBro
 		private Node(string name, Node parent)
 		{
 			Name = name;
-			Path = parent.Name + $"/{name}";
+			Path = $"{parent.Path}/{name}";
 			_children = new Dictionary<string, Node>();
 			Parent = parent;
 		}
@@ -81,11 +81,25 @@ namespace DocBro
 					}
 					else
 					{
-						child = child._children[part] = new Node(part, child);
+						var oldChild = child;
+						child = child._children[part] = new Node(part, oldChild);
 					}
 				}
 				child.Page = value;
+				Console.WriteLine(child.Path);
 			}
+		}
+
+		public Node GetNode(string path)
+		{
+			Node child = this;
+			var parts = path.Split('/').Select(str => str.Trim());
+			foreach (var part in parts)
+			{
+				if (String.IsNullOrWhiteSpace(part)) return null;
+				if (!child._children.TryGetValue(part, out child)) return null;
+			}
+			return child;
 		}
 	}
 }

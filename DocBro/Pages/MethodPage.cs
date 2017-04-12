@@ -21,49 +21,51 @@
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System;
+using System.Reflection;
 
 namespace DocBro
 {
-	public class TypePage : Page
+	public class MethodPage : Page
 	{
-		public Type Type { get; }
+		private readonly MethodInfo _method;
 
-		public TypePage(Type type, MemberData docs) : base(docs)
+		public MethodPage(MethodInfo method, MemberData docs) : base(docs)
 		{
-			Type = type;
-
-			var name = Util.GetDisplayTitle(type, false);
-
-			if (type.IsEnum)
-			{
-				Title = $"{name} Enum";
-			}
-			else if (type.IsInterface)
-			{
-				Title = $"{name} Interface";
-			}
-			else if (type.IsValueType)
-			{
-				Title = $"{name} Struct";
-			}
-			else if (type.IsSubclassOf(typeof(Delegate)))
-			{
-				Title = $"{name} Delegate";
-			}
-			else
-			{
-				Title = $"{name} Class";
-			}
+			_method = method;
+			Title = $"{Util.GetMethodSignature(method, false, false)} method ({Util.GetDisplayTitle(_method.DeclaringType)})";
 		}
 
 		public override void Render(Node parent, MarkdownWriter writer)
-		{	
+		{
 			writer.WriteHeader(1, Title);
-			writer.WriteParagraph($"**Namespace:** {Type.Namespace}");
-			writer.WriteParagraph(Docs.Summary);
+			if (Docs != null) writer.WriteParagraph(Docs.Summary);
 			writer.WriteHeader(2, "Signature");
-			writer.WriteCodeBlock("csharp", Util.GetClassSignature(Type));
+			writer.WriteCodeBlock("csharp", Util.GetMethodSignature(_method, true));
+			
+			if (Docs != null)
+			{
+				if (Docs.HasTypeParameters)
+				{
+					writer.WriteHeader(2, "Type Parameters");
+					foreach (var tp in _method.GetGenericArguments())
+					{
+						var desc = Docs?.GetTypeParameterDescription(tp.Name) ?? "(No Description)";
+						writer.WriteLine($"- `{tp.Name}`: {desc}");
+					}
+					writer.WriteLine();
+				}
+
+				if (Docs.HasParameters)
+				{
+					writer.WriteHeader(2, "Parameters");
+					foreach (var p in _method.GetParameters())
+					{
+						var desc = Docs?.GetParameterDescription(p.Name) ?? "(No Description)";
+						writer.WriteLine($"- `{p.Name}`: {desc}");
+					}
+					writer.WriteLine();
+				}
+			}
 		}
 	}
 }

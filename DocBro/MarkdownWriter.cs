@@ -62,7 +62,7 @@ namespace DocBro
 
 		public void WriteHeader(int headerRank, string content)
 		{
-			WriteLine($"{new StringBuilder('#', headerRank)} {content}");
+			WriteLine($"{new string('#', headerRank)} {content}");
 		}
 
 		public void WriteLink(string href, string title)
@@ -73,6 +73,16 @@ namespace DocBro
 		public void WriteHorizontalRule()
 		{
 			Write("\n***\n");
+		}
+
+		public void WriteParagraph(string value)
+		{
+			Write($"{value}\n\n");
+		}
+
+		public void WriteCodeBlock(string lang, string value)
+		{
+			Write($"```{lang}\n{value}\n```\n");
 		}
 	}
 }

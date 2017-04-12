@@ -22,17 +22,15 @@
 #endregion
 namespace DocBro
 {
-	public abstract class Page
+	public class FieldPage : Page
 	{
-		public MemberData Docs { get; }
-
-		public Page(MemberData xmlDocs)
+		public FieldPage(MemberData xmlDocs) : base(xmlDocs)
 		{
-			Docs = xmlDocs;
 		}
 
-		public string Title { get; protected set; }
-
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public override void Render(Node parent, MarkdownWriter writer)
+		{
+			
+		}
 	}
 }

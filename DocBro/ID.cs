@@ -22,8 +22,8 @@
 #endregion
 
 using System;
+using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace DocBro
 {
@@ -31,10 +31,44 @@ namespace DocBro
 	{
 		public static string GetIDString(Type type)
 		{
-			return $"T:{ConstructTypeString(type)}";
+			return $"T:{ConstructIDString(type)}";
 		}
 
-		private static string ConstructTypeString(Type type)
+		public static string GetIDString(MethodBase method)
+		{
+			return $"M:{ConstructIDString(method)}";
+		}
+
+		public static string GetIDString(FieldInfo field)
+		{
+			return $"F:{ConstructIDString(field.DeclaringType)}.{field.Name}";
+		}
+
+		public static string GetIDString(PropertyInfo property)
+		{
+			return $"P:{ConstructIDString(property.DeclaringType)}.{property.Name}";
+		}
+
+		private static string ConstructIDString(MethodBase method)
+		{
+			var sb = new StringBuilder();
+			var rawName = method.IsConstructor ? "#ctor" : method.Name;
+			sb.Append($"{ConstructIDString(method.DeclaringType)}.{rawName}");
+			var plist = method.GetParameters();
+			if (plist.Length > 0)
+			{
+				sb.Append("(");
+				for (int i = 0; i < plist.Length; i++)
+				{
+					if (i > 0) sb.Append(",");
+					sb.Append(ConstructIDString(plist[i].ParameterType));
+				}
+				sb.Append(")");
+			}
+			return sb.ToString();
+		}
+
+		private static string ConstructIDString(Type type)
 		{
 			var sb = new StringBuilder();
 			var elementType = type.GetElementType();
@@ -58,7 +92,7 @@ namespace DocBro
 					{
 						sb.Append(',');
 					}
-					sb.Append(ConstructTypeString(type.GenericTypeArguments[i]));
+					sb.Append(ConstructIDString(type.GenericTypeArguments[i]));
 				}
 				sb.Append('}');
 			}

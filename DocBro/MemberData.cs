@@ -1,4 +1,5 @@
 ﻿#region License
+
 // https://github.com/TheBerkin/DocBro
 // 
 // Copyright (c) 2017 Nicholas Fleck
@@ -19,20 +20,36 @@
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
+
+using System.Collections.Generic;
+
 namespace DocBro
 {
-	public abstract class Page
+	public sealed class MemberData
 	{
-		public MemberData Docs { get; }
+		private readonly Dictionary<string, string> _params = new Dictionary<string, string>();
+		private readonly Dictionary<string, string> _typeParams = new Dictionary<string, string>();
 
-		public Page(MemberData xmlDocs)
+		public string Summary { get; set; }
+		public string Returns { get; set; }
+
+		public bool HasParameters => _params.Count > 0;
+		public bool HasTypeParameters => _typeParams.Count > 0;
+
+		public void SetParameterDescription(string paramName, string description) => _params[paramName] = description;
+
+		public string GetParameterDescription(string paramName)
 		{
-			Docs = xmlDocs;
+			return _params.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
 		}
 
-		public string Title { get; protected set; }
+		public void SetTypeParameterDescription(string paramName, string description) => _typeParams[paramName] = description;
 
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public string GetTypeParameterDescription(string paramName)
+		{
+			return _typeParams.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
+		}
 	}
 }

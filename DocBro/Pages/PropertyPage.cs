@@ -20,19 +20,27 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endregion
+
+using System.Reflection;
+
 namespace DocBro
 {
-	public abstract class Page
+	public class PropertyPage : Page
 	{
-		public MemberData Docs { get; }
+		private readonly PropertyInfo _property;
 
-		public Page(MemberData xmlDocs)
+		public PropertyPage(PropertyInfo property, MemberData docs) : base(docs)
 		{
-			Docs = xmlDocs;
+			_property = property;
+			Title = $"{Util.GetPropertySignature(_property, false, false, false)} Property ({Util.GetDisplayTitle(_property.DeclaringType)})";
 		}
 
-		public string Title { get; protected set; }
-
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public override void Render(Node parent, MarkdownWriter writer)
+		{
+			writer.WriteHeader(1, Title);
+			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
+			writer.WriteHeader(2, "Signature");
+			writer.WriteCodeBlock("csharp", Util.GetPropertySignature(_property, true, true, true));
+		}
 	}
 }
