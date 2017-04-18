@@ -1,4 +1,5 @@
 ﻿#region License
+
 // https://github.com/TheBerkin/DocBro
 // 
 // Copyright (c) 2017 Nicholas Fleck
@@ -19,18 +20,29 @@
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
+
+using System.Reflection;
+
 namespace DocBro
 {
 	public class FieldPage : Page
 	{
-		public FieldPage(MemberData xmlDocs) : base(xmlDocs)
+		private readonly FieldInfo _field;
+
+		public FieldPage(FieldInfo field, MemberDocs docs) : base(docs)
 		{
+			_field = field;
+			Title = $"{Util.GetFieldSignature(_field, false)} field ({Util.GetDisplayTitle(_field.DeclaringType)})";
 		}
 
 		public override void Render(Node parent, MarkdownWriter writer)
 		{
-			
+			writer.WriteHeader(1, Title);
+			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
+			writer.WriteHeader(2, "Signature");
+			writer.WriteCodeBlock("csharp", Util.GetFieldSignature(_field, true));
 		}
 	}
 }

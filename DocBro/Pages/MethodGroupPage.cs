@@ -32,22 +32,52 @@ namespace DocBro
 	public class MethodGroupPage : Page
 	{
 		private readonly Type _type;
-		private readonly MethodInfo[] _methods;
+		private readonly Dictionary<MethodInfo, MemberDocs> _methodData;
 
-		public MethodGroupPage(Type type, IEnumerable<MethodInfo> methods) : base(null)
+		public MethodGroupPage(Type type, string name, Dictionary<MethodInfo, MemberDocs> methodData) : base(null)
 		{
 			_type = type;
-			_methods = methods.ToArray();
-			Title = $"{Util.GetDisplayTitle(type)}.{Util.GetIdentifier(_methods[0].Name)}";
+			_methodData = methodData;
+			Title = $"{Util.GetDisplayTitle(type)}.{Util.GetIdentifier(name)} method";
 		}
 
 		public override void Render(Node parent, MarkdownWriter writer)
 		{
 			writer.WriteHeader(1, Title);
-			writer.WriteHeader(2, "Overloads");
-			foreach (var method in _methods.OrderBy(m => m.GetParameters().Length))
+			foreach (var data in _methodData.OrderBy(m => m.Key.GetParameters().Length))
 			{
-				writer.WriteLine($"- {Util.GetMethodSignature(method, false, false)}");
+				var method = data.Key;
+				var docs = data.Value;
+
+				writer.WriteHeader(2, Util.GetMethodSignature(method, false, false));
+				writer.WriteParagraph(docs?.Summary);
+				writer.WriteHeader(3, "Signature");
+				writer.WriteCodeBlock("csharp", Util.GetMethodSignature(method, true, true));
+
+				if (docs != null)
+				{
+					if (docs.HasTypeParameters)
+					{
+						writer.WriteHeader(3, "Type Parameters");
+						foreach (var tp in method.GetGenericArguments())
+						{
+							var desc = docs?.GetTypeParameterDescription(tp.Name) ?? "_(No Description)_";
+							writer.WriteLine($"- `{tp.Name}`: {desc}");
+						}
+						writer.WriteLine();
+					}
+
+					if (docs.HasParameters)
+					{
+						writer.WriteHeader(3, "Parameters");
+						foreach (var p in method.GetParameters())
+						{
+							var desc = docs?.GetParameterDescription(p.Name) ?? "_(No Description)_";
+							writer.WriteLine($"- `{p.Name}`: {desc}");
+						}
+						writer.WriteLine();
+					}
+				}
 			}
 		}
 	}

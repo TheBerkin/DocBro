@@ -24,9 +24,9 @@ namespace DocBro
 {
 	public abstract class Page
 	{
-		public MemberData Docs { get; }
+		public MemberDocs Docs { get; }
 
-		public Page(MemberData xmlDocs)
+		public Page(MemberDocs xmlDocs)
 		{
 			Docs = xmlDocs;
 		}

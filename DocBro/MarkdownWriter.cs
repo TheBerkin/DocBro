@@ -22,6 +22,7 @@
 #endregion
 
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DocBro
@@ -60,9 +61,9 @@ namespace DocBro
 		{
 		}
 
-		public void WriteHeader(int headerRank, string content)
+		public void WriteHeader(int headerRank, string content, bool escaped = false)
 		{
-			WriteLine($"{new string('#', headerRank)} {content}");
+			WriteLine($"{new string('#', headerRank)} {(escaped ? Escape(content) : content)}");
 		}
 
 		public void WriteLink(string href, string title)
@@ -75,14 +76,41 @@ namespace DocBro
 			Write("\n***\n");
 		}
 
-		public void WriteParagraph(string value)
+		public void WriteParagraph(string value, bool escaped = false)
 		{
-			Write($"{value}\n\n");
+			if (value == null) return;
+			Write($"{(escaped ? Escape(value) : value)}\n\n");
+		}
+
+		public void WriteInfoBox(string msg, string msgType = "info")
+		{
+			Write($"\n!!! {msgType}\n{(msg.Split('\n').Select(ln => "    " + ln).Aggregate((c, n) => $"{c}\n{n}"))}\n\n");
 		}
 
 		public void WriteCodeBlock(string lang, string value)
 		{
 			Write($"```{lang}\n{value}\n```\n");
+		}
+
+		private static string Escape(string value)
+		{
+			var sb = new StringBuilder();
+			for (int i = 0; i < value.Length; i++)
+			{
+				switch (value[i])
+				{
+					case '>':
+						sb.Append("\\>");
+						break;
+					case '<':
+						sb.Append("\\<");
+						break;
+					default:
+						sb.Append(value[i]);
+						break;
+				}
+			}
+			return sb.ToString();
 		}
 	}
 }

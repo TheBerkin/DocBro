@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text;
 
@@ -99,6 +100,72 @@ namespace DocBro
 				{ "op_UnaryPlus", "+" },
 				{ "op_OnesComplement", "~" }
 			};
+		}
+
+		public static string GetTypeTitle(Type type, bool includeNamespace = false)
+		{
+			var name = GetDisplayTitle(type, false);
+			var sb = new StringBuilder();
+
+			if (type.IsEnum)
+			{
+				sb.Append($"{name} enum");
+			}
+			else if (type.IsInterface)
+			{
+				sb.Append($"{name} interface");
+			}
+			else if (type.IsValueType)
+			{
+				sb.Append($"{name} struct");
+			}
+			else if (type.IsSubclassOf(typeof(Delegate)))
+			{
+				sb.Append($"{name} delegate");
+			}
+			else
+			{
+				sb.Append($"{name} class");
+			}
+
+			if (includeNamespace) sb.Append($" ({type.Namespace})");
+
+			return sb.ToString();
+		}
+
+		public static string ChangeExtension(string path, string extension)
+		{
+			int dotIndex = path.LastIndexOf(".", StringComparison.Ordinal);
+			int slashIndex = path.LastIndexOf("/", StringComparison.Ordinal);
+			if (dotIndex < slashIndex) return $"{path}.{extension}";
+			var pathNoExt = dotIndex > -1 ? path.Substring(0, dotIndex) : path;
+			return $"{pathNoExt}.{extension}";
+		}
+
+		public static string GetInheritanceString(Type type)
+		{
+			if (type == typeof(object)) return String.Empty;
+			var lstBases = new List<Type>();
+			var t = type;
+			do
+			{
+				lstBases.Add(t);
+				t = t.BaseType;
+			} while (t != typeof(object) && t != null);
+			lstBases.Reverse();
+			var sb = new StringBuilder();
+			sb.Append("Object \u2192 ");
+			for (int i = 0; i < lstBases.Count; i++)
+			{
+				if (i > 0) sb.Append(" \u2192 ");
+				sb.Append(GetDisplayTitle(lstBases[i], false));
+			}
+			return sb.ToString();
+		}
+
+		public static string GetOperatorSymbol(string operatorMethodName)
+		{
+			return operations.TryGetValue(operatorMethodName, out string symbol) ? symbol : String.Empty;
 		}
 
 		public static string GetBuiltinName(Type type)
@@ -189,6 +256,39 @@ namespace DocBro
 						sb.Append(GetDisplayTitle(interfaces[i]));
 					}
 				}
+			}
+
+			return sb.ToString();
+		}
+
+		public static string GetFieldSignature(FieldInfo field, bool fullDefinition = false)
+		{
+			var sb = new StringBuilder();
+			if (fullDefinition)
+			{
+				if (field.IsPublic) sb.Append("public ");
+				if (field.IsLiteral)
+				{
+					sb.Append("const ");
+				}
+				else
+				{
+					if (field.IsStatic) sb.Append("static ");
+					if (field.IsInitOnly) sb.Append("readonly ");
+				}
+
+				sb.Append(GetDisplayTitle(field.FieldType, false));
+				sb.Append(" ");
+			}
+
+			sb.Append(field.Name);
+			if (fullDefinition)
+			{
+				if (field.IsLiteral)
+				{
+					sb.Append($" = {GetConstantValueString(field.GetRawConstantValue())}");
+				}
+				sb.Append(";");
 			}
 
 			return sb.ToString();

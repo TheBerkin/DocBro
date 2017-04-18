@@ -27,13 +27,14 @@ using System.Collections.Generic;
 
 namespace DocBro
 {
-	public sealed class MemberData
+	public sealed class MemberDocs
 	{
 		private readonly Dictionary<string, string> _params = new Dictionary<string, string>();
 		private readonly Dictionary<string, string> _typeParams = new Dictionary<string, string>();
 
 		public string Summary { get; set; }
 		public string Returns { get; set; }
+		public string Remarks { get; set; }
 
 		public bool HasParameters => _params.Count > 0;
 		public bool HasTypeParameters => _typeParams.Count > 0;
