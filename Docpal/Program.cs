@@ -30,15 +30,16 @@ namespace Docpal
 			{
 				Console.WriteLine("Building...");
 				var dll = Assembly.LoadFile(dllPath);
-				var xml = new XmlDocument();
+				XmlDocument xml = null;
 				if (File.Exists(xmlPath))
 				{
+					xml = new XmlDocument();
 					xml.Load(xmlPath);
+					Console.WriteLine($"Found XML: {xmlPath}");
 				}
 				else
 				{
-					xml = null;
-					Console.WriteLine("No matching XML file found. Using only reflected types...");
+					Console.WriteLine("No XML docs found, using only assembly...");
 				}
 
 				if (Args.Flag("slim"))
@@ -55,7 +56,7 @@ namespace Docpal
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				Console.WriteLine($"Unfortunately, there was an error.\n\n{e}");
 			}
 		}
 	}
