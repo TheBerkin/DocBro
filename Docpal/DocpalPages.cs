@@ -129,7 +129,6 @@ namespace Docpal
 			{
 				var documentDir = Directory.GetParent($"{outputDir}/{node.Path}").FullName;
 				var documentPath = $"{outputDir}/{node.Path}.md";
-				Console.WriteLine(documentPath);
 				Directory.CreateDirectory(documentDir);
 				using (var writer = new MarkdownWriter(documentPath))
 				{
