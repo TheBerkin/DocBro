@@ -1,4 +1,5 @@
 ﻿#region License
+
 // https://github.com/TheBerkin/DocBro
 // 
 // Copyright (c) 2017 Nicholas Fleck
@@ -19,20 +20,29 @@
 // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#endregion
-namespace DocBro
-{
-	public abstract class Page
-	{
-		public MemberDocs Docs { get; }
 
-		public Page(MemberDocs xmlDocs)
+#endregion
+
+using System.Reflection;
+
+namespace Docpal
+{
+	public class PropertyPage : Page
+	{
+		private readonly PropertyInfo _property;
+
+		public PropertyPage(PropertyInfo property, MemberXmlDocs docs) : base(docs)
 		{
-			Docs = xmlDocs;
+			_property = property;
+			Title = $"{DocUtilities.GetPropertySignature(_property, false, false, false)} property ({DocUtilities.GetDisplayTitle(_property.DeclaringType)})";
 		}
 
-		public string Title { get; protected set; }
-
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public override void Render(Node parent, MarkdownWriter writer)
+		{
+			writer.WriteHeader(1, Title);
+			writer.WriteParagraph(Docs?.Summary ?? "_(No Description)_");
+			writer.WriteHeader(2, "Signature");
+			writer.WriteCodeBlock("csharp", DocUtilities.GetPropertySignature(_property, true, true, true));
+		}
 	}
 }

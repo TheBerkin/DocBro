@@ -25,7 +25,7 @@ using System;
 using System.Reflection;
 using System.Text;
 
-namespace DocBro
+namespace Docpal
 {
 	public static class ID
 	{
@@ -46,7 +46,23 @@ namespace DocBro
 
 		public static string GetIDString(PropertyInfo property)
 		{
-			return $"P:{ConstructIDString(property.DeclaringType)}.{property.Name}";
+			var sb = new StringBuilder();
+			sb.Append($"P:{ConstructIDString(property.DeclaringType)}.{property.Name}");
+
+			// Check if it's an indexer
+			var indexParams = property.GetIndexParameters();
+			if (indexParams.Length > 0)
+			{
+				sb.Append("(");
+				for (int i = 0; i < indexParams.Length; i++)
+				{
+					if (i > 0) sb.Append(",");
+					sb.Append(ConstructIDString(indexParams[i].ParameterType));
+				}
+				sb.Append(")");
+			}
+
+			return sb.ToString();
 		}
 
 		private static string ConstructIDString(MethodBase method)

@@ -25,16 +25,16 @@
 
 using System.Reflection;
 
-namespace DocBro
+namespace Docpal
 {
 	public class FieldPage : Page
 	{
 		private readonly FieldInfo _field;
 
-		public FieldPage(FieldInfo field, MemberDocs docs) : base(docs)
+		public FieldPage(FieldInfo field, MemberXmlDocs docs) : base(docs)
 		{
 			_field = field;
-			Title = $"{Util.GetFieldSignature(_field, false)} field ({Util.GetDisplayTitle(_field.DeclaringType)})";
+			Title = $"{DocUtilities.GetFieldSignature(_field, false)} field ({DocUtilities.GetDisplayTitle(_field.DeclaringType)})";
 		}
 
 		public override void Render(Node parent, MarkdownWriter writer)
@@ -42,7 +42,7 @@ namespace DocBro
 			writer.WriteHeader(1, Title);
 			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
 			writer.WriteHeader(2, "Signature");
-			writer.WriteCodeBlock("csharp", Util.GetFieldSignature(_field, true));
+			writer.WriteCodeBlock("csharp", DocUtilities.GetFieldSignature(_field, true));
 		}
 	}
 }

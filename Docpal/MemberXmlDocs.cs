@@ -23,26 +23,34 @@
 
 #endregion
 
-using System.Reflection;
+using System.Collections.Generic;
 
-namespace DocBro
+namespace Docpal
 {
-	public class PropertyPage : Page
+	public sealed class MemberXmlDocs
 	{
-		private readonly PropertyInfo _property;
+		private readonly Dictionary<string, string> _params = new Dictionary<string, string>();
+		private readonly Dictionary<string, string> _typeParams = new Dictionary<string, string>();
 
-		public PropertyPage(PropertyInfo property, MemberDocs docs) : base(docs)
+		public string Summary { get; set; }
+		public string Returns { get; set; }
+		public string Remarks { get; set; }
+
+		public bool HasParameters => _params.Count > 0;
+		public bool HasTypeParameters => _typeParams.Count > 0;
+
+		public void SetParameterDescription(string paramName, string description) => _params[paramName] = description;
+
+		public string GetParameterDescription(string paramName)
 		{
-			_property = property;
-			Title = $"{Util.GetPropertySignature(_property, false, false, false)} property ({Util.GetDisplayTitle(_property.DeclaringType)})";
+			return _params.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
 		}
 
-		public override void Render(Node parent, MarkdownWriter writer)
+		public void SetTypeParameterDescription(string paramName, string description) => _typeParams[paramName] = description;
+
+		public string GetTypeParameterDescription(string paramName)
 		{
-			writer.WriteHeader(1, Title);
-			writer.WriteParagraph(Docs?.Summary ?? "_(No Description)_");
-			writer.WriteHeader(2, "Signature");
-			writer.WriteCodeBlock("csharp", Util.GetPropertySignature(_property, true, true, true));
+			return _typeParams.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
 		}
 	}
 }

@@ -25,18 +25,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace DocBro
+namespace Docpal
 {
-	public static class Util
+	public static class DocUtilities
 	{
 		private static readonly Dictionary<Type, string> primitiveNames;
 		private static readonly Dictionary<string, string> operations;
 
-		static Util()
+		static DocUtilities()
 		{
 			primitiveNames = new Dictionary<Type, string>
 			{

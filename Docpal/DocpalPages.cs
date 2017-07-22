@@ -28,19 +28,19 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 
-namespace DocBro
+namespace Docpal
 {
-	public static class DBPages
+	public static class DocpalPages
 	{
 		public static void BuildDocs(XmlDocument xml, Assembly dll, string outputDir)
 		{
 			var docs = new Node("Main");
 			var pageNodes = new List<Node>();
-			var meta = new Dictionary<string, MemberDocs>();
+			var meta = new Dictionary<string, MemberXmlDocs>();
 			foreach (XmlNode item in xml.SelectNodes("//doc/members/member"))
 			{
 				var id = item.Attributes["name"].Value;
-				var data = meta[id] = new MemberDocs
+				var data = meta[id] = new MemberXmlDocs
 				{
 					Summary = item.SelectSingleNode("summary")?.InnerText.Trim() ?? "(No Description)",
 					Returns = item.SelectSingleNode("returns")?.InnerText.Trim() ?? String.Empty
@@ -54,8 +54,8 @@ namespace DocBro
 
 			foreach (var type in dll.GetExportedTypes())
 			{
-				var typePath = $"{type.Namespace.Replace('.', '/')}/{Util.GetURLTitle(type)}";
-				meta.TryGetValue(ID.GetIDString(type), out MemberDocs typeData);
+				var typePath = $"{type.Namespace.Replace('.', '/')}/{DocUtilities.GetURLTitle(type)}";
+				meta.TryGetValue(ID.GetIDString(type), out MemberXmlDocs typeData);
 
 				docs[typePath] = new TypePage(type, typeData);
 				pageNodes.Add(docs.GetNode(typePath));
@@ -67,7 +67,7 @@ namespace DocBro
 					foreach (var ctor in ctors)
 					{
 						var ctorPath = $"{typePath}/new/{ctorNum}";
-						if (meta.TryGetValue(ID.GetIDString(ctor), out MemberDocs methodData))
+						if (meta.TryGetValue(ID.GetIDString(ctor), out MemberXmlDocs methodData))
 						{
 						}
 						ctorNum++;
@@ -83,11 +83,11 @@ namespace DocBro
 					var methodGroupPath = $"{typePath}/{methodGroup.Key}";
 
 					// Map of reflected methods and documentation
-					var methods = new Dictionary<MethodInfo, MemberDocs>();
+					var methods = new Dictionary<MethodInfo, MemberXmlDocs>();
 
 					foreach (var method in methodGroup)
 					{
-						meta.TryGetValue(ID.GetIDString(method), out MemberDocs methodData);
+						meta.TryGetValue(ID.GetIDString(method), out MemberXmlDocs methodData);
 						methods[method] = methodData;
 					}
 
@@ -99,7 +99,7 @@ namespace DocBro
 				foreach (var field in type.GetFields().Where(f => (f.IsPublic || !f.IsPrivate) && (!f.DeclaringType.IsEnum || !f.IsSpecialName)))
 				{
 					var fieldPath = Path.Combine(typePath, field.Name).Replace('\\', '/');
-					meta.TryGetValue(ID.GetIDString(field), out MemberDocs fieldData);
+					meta.TryGetValue(ID.GetIDString(field), out MemberXmlDocs fieldData);
 					docs[fieldPath] = new FieldPage(field, fieldData);
 					pageNodes.Add(docs.GetNode(fieldPath));
 				}
@@ -108,7 +108,7 @@ namespace DocBro
 				int numIndexers = 0;
 				foreach (var property in type.GetProperties())
 				{
-					meta.TryGetValue(ID.GetIDString(property), out MemberDocs propData);
+					meta.TryGetValue(ID.GetIDString(property), out MemberXmlDocs propData);
 
 					string propPath;
 					if (property.GetIndexParameters().Length > 0)

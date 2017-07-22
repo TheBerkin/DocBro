@@ -22,23 +22,22 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace DocBro
+namespace Docpal
 {
 	public class MethodGroupPage : Page
 	{
 		private readonly Type _type;
-		private readonly Dictionary<MethodInfo, MemberDocs> _methodData;
+		private readonly Dictionary<MethodInfo, MemberXmlDocs> _methodData;
 
-		public MethodGroupPage(Type type, string name, Dictionary<MethodInfo, MemberDocs> methodData) : base(null)
+		public MethodGroupPage(Type type, string name, Dictionary<MethodInfo, MemberXmlDocs> methodData) : base(null)
 		{
 			_type = type;
 			_methodData = methodData;
-			Title = $"{Util.GetDisplayTitle(type)}.{Util.GetIdentifier(name)} method";
+			Title = $"{DocUtilities.GetDisplayTitle(type)}.{DocUtilities.GetIdentifier(name)} method";
 		}
 
 		public override void Render(Node parent, MarkdownWriter writer)
@@ -49,10 +48,10 @@ namespace DocBro
 				var method = data.Key;
 				var docs = data.Value;
 
-				writer.WriteHeader(2, Util.GetMethodSignature(method, false, false));
+				writer.WriteHeader(2, DocUtilities.GetMethodSignature(method, false, false));
 				writer.WriteParagraph(docs?.Summary);
 				writer.WriteHeader(3, "Signature");
-				writer.WriteCodeBlock("csharp", Util.GetMethodSignature(method, true, true));
+				writer.WriteCodeBlock("csharp", DocUtilities.GetMethodSignature(method, true, true));
 
 				if (docs != null)
 				{

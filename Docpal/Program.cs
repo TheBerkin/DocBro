@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Xml;
 
-namespace DocBro
+namespace Docpal
 {
 	class Program
 	{
@@ -17,7 +17,7 @@ namespace DocBro
 			}
 
 			var dllPath = paths[0];
-			var xmlPath = Util.ChangeExtension(dllPath, "xml");
+			var xmlPath = DocUtilities.ChangeExtension(dllPath, "xml");
 			var outputPath = Args.Property("out", "docs");
 
 			if (!File.Exists(dllPath))
@@ -43,14 +43,14 @@ namespace DocBro
 
 				if (Args.Flag("slim"))
 				{
-					DBSlim.BuildDocs(xml, dll, Util.ChangeExtension(outputPath, "md"));
+					DocpalSlim.BuildDocs(xml, dll, DocUtilities.ChangeExtension(outputPath, "md"));
 				}
 				else
 				{
-					DBPages.BuildDocs(xml, dll, outputPath);
+					DocpalPages.BuildDocs(xml, dll, outputPath);
 				}
 
-				Console.WriteLine("Enjoy");
+				Console.WriteLine("Done, enjoy!");
 
 			}
 			catch (Exception e)

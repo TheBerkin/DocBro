@@ -27,7 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DocBro
+namespace Docpal
 {
 	internal static class Args
 	{

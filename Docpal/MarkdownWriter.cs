@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DocBro
+namespace Docpal
 {
 	public class MarkdownWriter : StreamWriter
 	{

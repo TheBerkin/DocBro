@@ -27,19 +27,21 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 
-namespace DocBro
+namespace Docpal
 {
-	public static class DBSlim
+	public static class DocpalSlim
 	{
 		private const string Lang = "csharp";
 
 		public static void BuildDocs(XmlDocument xml, Assembly dll, string outputFilePath)
 		{
-			var meta = new Dictionary<string, MemberDocs>();
+			var meta = new Dictionary<string, MemberXmlDocs>();
+
+			// Parse XML documentation
 			foreach (XmlNode item in xml.SelectNodes("//doc/members/member"))
 			{
 				var id = item.Attributes["name"].Value;
-				var data = meta[id] = new MemberDocs
+				var data = meta[id] = new MemberXmlDocs
 				{
 					Summary = item.SelectSingleNode("summary")?.InnerText.Trim() ?? "(No Description)",
 					Returns = item.SelectSingleNode("returns")?.InnerText.Trim() ?? String.Empty,
@@ -57,34 +59,37 @@ namespace DocBro
 				}
 			}
 
-			using(var writer = new MarkdownWriter(outputFilePath))
+			// Write markdown file
+			using (var writer = new MarkdownWriter(outputFilePath))
 			{
 				foreach (var type in dll.ExportedTypes.Where(t => !t.Name.StartsWith("_")).OrderBy(t => t.Name))
 				{
 					// Pull XML docs for type
-					meta.TryGetValue(ID.GetIDString(type), out MemberDocs typeDocs);
+					meta.TryGetValue(ID.GetIDString(type), out MemberXmlDocs typeDocs);
 
 					// Header, e.g. "StringBuilder class (System)"
-					writer.WriteHeader(2, Util.GetTypeTitle(type, true), true);
+					writer.WriteHeader(2, DocUtilities.GetTypeTitle(type, true), true);
 
 					// Summary and other info
 					PrintObsoleteWarning(type, writer);
 					writer.WriteParagraph($"**Namespace:** {type.Namespace}");
-					writer.WriteParagraph($"**Inheritance:** {Util.GetInheritanceString(type)}", true);
+					writer.WriteParagraph($"**Inheritance:** {DocUtilities.GetInheritanceString(type)}", true);
 					Summary(typeDocs, writer);
 
 					// Signature
-					writer.WriteCodeBlock(Lang, Util.GetClassSignature(type));
+					writer.WriteCodeBlock(Lang, DocUtilities.GetClassSignature(type));
 
+					// Members
 					WriteConstructors(type, writer, meta);
 					WriteProperties(type, writer, meta);
+					WriteIndexers(type, writer, meta);
 					WriteFields(type, writer, meta);
 					WriteMethods(type, writer, meta);
 				}
 			}
 		}
 
-		private static void WriteMethods(Type type, MarkdownWriter writer, Dictionary<string, MemberDocs> docs)
+		private static void WriteMethods(Type type, MarkdownWriter writer, Dictionary<string, MemberXmlDocs> docs)
 		{
 			var methods = type.GetMethods()
 				.Where(m => !m.IsSpecialName)
@@ -97,13 +102,13 @@ namespace DocBro
 				writer.WriteHeader(3, "Methods");
 				foreach (var method in methods)
 				{
-					docs.TryGetValue(ID.GetIDString(method), out MemberDocs methodDocs);
+					docs.TryGetValue(ID.GetIDString(method), out MemberXmlDocs methodDocs);
 
 					// Heading
-					writer.WriteHeader(4, $"{Util.GetMethodSignature(method, false, false)} method", true);
+					writer.WriteHeader(4, DocUtilities.GetMethodSignature(method, false, false), true);
 					PrintObsoleteWarning(method, writer);
 					Summary(methodDocs, writer);
-					writer.WriteCodeBlock(Lang, Util.GetMethodSignature(method, true, true));
+					writer.WriteCodeBlock(Lang, DocUtilities.GetMethodSignature(method, true, true));
 
 					// Parameters
 					WriteParamList(4, method, writer, methodDocs);
@@ -113,30 +118,55 @@ namespace DocBro
 			}
 		}
 
-		private static void WriteProperties(Type type, MarkdownWriter writer, Dictionary<string, MemberDocs> docs)
+		private static void WriteProperties(Type type, MarkdownWriter writer, Dictionary<string, MemberXmlDocs> docs)
 		{
 			var props = type.GetProperties()
 				.Where(p => p.GetIndexParameters().Length == 0)
 				.OrderBy(p => p.Name)
 				.ToArray();
+
 			if (props.Length == 0) return;
 
 			writer.WriteHeader(3, "Properties");
 
 			for (int i = 0; i < props.Length; i++)
 			{
-				docs.TryGetValue(ID.GetIDString(props[i]), out MemberDocs propDocs);
-				writer.WriteHeader(4, $"{Util.GetPropertySignature(props[i], false, false, false)} property");
+				docs.TryGetValue(ID.GetIDString(props[i]), out MemberXmlDocs propDocs);
+				writer.WriteHeader(4, DocUtilities.GetPropertySignature(props[i], false, false, false));
 				PrintObsoleteWarning(props[i], writer);
 				Summary(propDocs, writer);
 
-				writer.WriteCodeBlock(Lang, Util.GetPropertySignature(props[i], true, true, true));
+				writer.WriteCodeBlock(Lang, DocUtilities.GetPropertySignature(props[i], true, true, true));
 
 				Remarks(5, propDocs, writer);
 			}
 		}
 
-		private static void WriteFields(Type type, MarkdownWriter writer, Dictionary<string, MemberDocs> docs)
+		private static void WriteIndexers(Type type, MarkdownWriter writer, Dictionary<string, MemberXmlDocs> docs)
+		{
+			var indexers = type.GetProperties()
+				.Where(p => p.GetIndexParameters().Length > 0)
+				.OrderBy(p => p.GetIndexParameters().Length)
+				.ToArray();
+
+			if (indexers.Length == 0) return;
+
+			writer.WriteHeader(3, "Indexers");
+
+			for (int i = 0; i < indexers.Length; i++)
+			{
+				docs.TryGetValue(ID.GetIDString(indexers[i]), out MemberXmlDocs indxDocs);
+				writer.WriteHeader(4, DocUtilities.GetPropertySignature(indexers[i], false, true, false));
+				PrintObsoleteWarning(indexers[i], writer);
+				Summary(indxDocs, writer);
+
+				writer.WriteCodeBlock(Lang, DocUtilities.GetPropertySignature(indexers[i], true, true, true));
+
+				Remarks(5, indxDocs, writer);
+			}
+		}
+
+		private static void WriteFields(Type type, MarkdownWriter writer, Dictionary<string, MemberXmlDocs> docs)
 		{
 			var fields = type.GetFields()
 				.Where(f => !f.IsSpecialName)
@@ -149,12 +179,12 @@ namespace DocBro
 
 			for (int i = 0; i < fields.Length; i++)
 			{
-				docs.TryGetValue(ID.GetIDString(fields[i]), out MemberDocs fieldDocs);
-				writer.WriteHeader(4, $"{Util.GetFieldSignature(fields[i], false)} field");
+				docs.TryGetValue(ID.GetIDString(fields[i]), out MemberXmlDocs fieldDocs);
+				writer.WriteHeader(4, DocUtilities.GetFieldSignature(fields[i], false));
 				PrintObsoleteWarning(fields[i], writer);
 				Summary(fieldDocs, writer);
 
-				writer.WriteCodeBlock(Lang, Util.GetFieldSignature(fields[i], true));
+				writer.WriteCodeBlock(Lang, DocUtilities.GetFieldSignature(fields[i], true));
 
 				Remarks(5, fieldDocs, writer);
 			}
@@ -167,10 +197,10 @@ namespace DocBro
 			writer.WriteInfoBox($"**This item is deprecated.**\n{obsAttr.Message}", "warning");
 		}
 
-		private static void WriteParamList(int rank, MethodBase method, MarkdownWriter writer, MemberDocs docs)
+		private static void WriteParamList(int rank, MethodBase method, MarkdownWriter writer, MemberXmlDocs docs)
 		{
 			var plist = method.GetParameters();
-			
+
 
 			if (method.ContainsGenericParameters)
 			{
@@ -192,7 +222,7 @@ namespace DocBro
 			}
 		}
 
-		private static void WriteConstructors(Type type, MarkdownWriter writer, Dictionary<string, MemberDocs> docs)
+		private static void WriteConstructors(Type type, MarkdownWriter writer, Dictionary<string, MemberXmlDocs> docs)
 		{
 			// Constructor list
 			var ctors = type.GetConstructors();
@@ -203,13 +233,13 @@ namespace DocBro
 				for (int i = 0; i < ctors.Length; i++)
 				{
 					// Heading for constructor section
-					docs.TryGetValue(ID.GetIDString(ctors[i]), out MemberDocs ctorDocs);
-					writer.WriteHeader(4, Util.GetMethodSignature(ctors[i], false, false));
+					docs.TryGetValue(ID.GetIDString(ctors[i]), out MemberXmlDocs ctorDocs);
+					writer.WriteHeader(4, DocUtilities.GetMethodSignature(ctors[i], false, false));
 					PrintObsoleteWarning(ctors[i], writer);
 					Summary(ctorDocs, writer);
 
 					// Signature
-					writer.WriteCodeBlock(Lang, Util.GetMethodSignature(ctors[i], true, true));
+					writer.WriteCodeBlock(Lang, DocUtilities.GetMethodSignature(ctors[i], true, true));
 
 					// Get constructor's parameters and associated docs
 					WriteParamList(5, ctors[i], writer, ctorDocs);
@@ -218,9 +248,9 @@ namespace DocBro
 			}
 		}
 
-		private static void Summary(MemberDocs docs, MarkdownWriter writer) => writer.WriteParagraph(docs?.Summary ?? "_No Summary_");
+		private static void Summary(MemberXmlDocs docs, MarkdownWriter writer) => writer.WriteParagraph(docs?.Summary ?? "_No Summary_");
 
-		private static void Remarks(int rank, MemberDocs docs, MarkdownWriter writer)
+		private static void Remarks(int rank, MemberXmlDocs docs, MarkdownWriter writer)
 		{
 			var remarks = docs?.Remarks;
 			if (!String.IsNullOrWhiteSpace(remarks))
@@ -230,7 +260,7 @@ namespace DocBro
 			}
 		}
 
-		private static void Returns(int rank, MemberDocs docs, MarkdownWriter writer)
+		private static void Returns(int rank, MemberXmlDocs docs, MarkdownWriter writer)
 		{
 			var returns = docs?.Returns;
 			if (!String.IsNullOrWhiteSpace(returns))
@@ -240,8 +270,8 @@ namespace DocBro
 			}
 		}
 
-		private static string Param(MemberDocs docs, ParameterInfo param) => docs?.GetParameterDescription(param.Name) ?? "_No Description_";
+		private static string Param(MemberXmlDocs docs, ParameterInfo param) => docs?.GetParameterDescription(param.Name) ?? "_No Description_";
 
-		private static string TypeParam(MemberDocs docs, string name) => docs?.GetTypeParameterDescription(name) ?? "_No Description_";
+		private static string TypeParam(MemberXmlDocs docs, string name) => docs?.GetTypeParameterDescription(name) ?? "_No Description_";
 	}
 }

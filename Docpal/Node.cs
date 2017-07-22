@@ -23,10 +23,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
-namespace DocBro
+namespace Docpal
 {
 	public sealed class Node
 	{

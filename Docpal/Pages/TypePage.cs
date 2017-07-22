@@ -25,17 +25,17 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace DocBro
+namespace Docpal
 {
 	public class TypePage : Page
 	{
 		public Type Type { get; }
 
-		public TypePage(Type type, MemberDocs docs) : base(docs)
+		public TypePage(Type type, MemberXmlDocs docs) : base(docs)
 		{
 			Type = type;
 
-			var name = Util.GetDisplayTitle(type, false);
+			var name = DocUtilities.GetDisplayTitle(type, false);
 
 			if (type.IsEnum)
 			{
@@ -63,12 +63,12 @@ namespace DocBro
 		{
 			writer.WriteHeader(1, Title);
 			writer.WriteParagraph($"**Namespace:** {Type.Namespace}");
-			var inheritance = Util.GetInheritanceString(Type);
+			var inheritance = DocUtilities.GetInheritanceString(Type);
 			if (!String.IsNullOrEmpty(inheritance))
 				writer.WriteParagraph($"**Inheritance:** {inheritance}");
 			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
 			writer.WriteHeader(2, "Signature");
-			writer.WriteCodeBlock("csharp", Util.GetClassSignature(Type));
+			writer.WriteCodeBlock("csharp", DocUtilities.GetClassSignature(Type));
 			
 			var methods = Type.GetMethods().OrderBy(m => m.Name).ToArray();
 			if (methods.Length > 0)
@@ -76,7 +76,7 @@ namespace DocBro
 				writer.WriteHeader(2, "Methods");
 				foreach (var methodGroup in methods.Where(m => !m.IsSpecialName).GroupBy(m => m.Name))
 				{
-					var sbLink = new StringBuilder($"- [{Util.GetIdentifier(methodGroup.Key)}]({Util.GetURLTitle(Type)}/{Util.GetIdentifier(methodGroup.Key)}.md)");
+					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(methodGroup.Key)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(methodGroup.Key)}.md)");
 					bool isStatic = methodGroup.All(m => m.IsStatic);
 					if (isStatic) sbLink.Append(" (static)");
 					writer.WriteLine(sbLink.ToString());
@@ -92,7 +92,7 @@ namespace DocBro
 				writer.WriteHeader(2, "Properties");
 				foreach (var prop in props)
 				{
-					var sbLink = new StringBuilder($"- [{Util.GetIdentifier(prop.Name)}]({Util.GetURLTitle(Type)}/{Util.GetIdentifier(prop.Name)}.md)");
+					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(prop.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(prop.Name)}.md)");
 					bool isStatic = prop.CanRead && prop.GetGetMethod(true).IsStatic || prop.CanWrite && prop.GetSetMethod(true).IsStatic;
 					if (isStatic) sbLink.Append(" (static)");
 					writer.WriteLine(sbLink.ToString());
@@ -108,7 +108,7 @@ namespace DocBro
 				writer.WriteHeader(2, "Fields");
 				foreach (var field in fields)
 				{
-					var sbLink = new StringBuilder($"- [{Util.GetIdentifier(field.Name)}]({Util.GetURLTitle(Type)}/{Util.GetIdentifier(field.Name)}.md)");
+					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(field.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(field.Name)}.md)");
 					if (field.IsStatic) sbLink.Append(" (static)");
 					writer.WriteLine(sbLink.ToString());
 				}
@@ -126,7 +126,7 @@ namespace DocBro
 				writer.WriteHeader(2, "Operators");
 				foreach (var op in operators)
 				{
-					writer.WriteLine($"- [{Util.GetOperatorSymbol(op.Name)}]({Util.GetURLTitle(Type)}/{op.Name}.md)");
+					writer.WriteLine($"- [{DocUtilities.GetOperatorSymbol(op.Name)}]({DocUtilities.GetURLTitle(Type)}/{op.Name}.md)");
 				}
 			}
 
