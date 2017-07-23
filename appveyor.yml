@@ -1,0 +1,14 @@
+version: 0.0.{build}
+image: Visual Studio 2017
+configuration: Release
+build:
+  verbosity: minimal
+artifacts:
+- path: Docpal\bin\Release
+  name: Docpal
+only_commits:
+  files:
+    - Docpal/
+    - '*.cs'
+    - '*.sln'
+    - 'appveyor.yml'

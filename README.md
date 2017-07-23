@@ -1,12 +1,13 @@
+# Docpal
+[![Build status](https://ci.appveyor.com/api/projects/status/dlvs655kyryk0doy?svg=true)](https://ci.appveyor.com/project/TheBerkin/docpal)
+
 **Are overcomplicated documentation tools making you headbang a brick wall?**
 
 **Wishing for something compatible with a Markdown-based site generator?**
 
 **Longing for more than an XML comment scraper?**
 
-## Introducing Docpal
-
-Docpal is a Markdown documentation generator for .NET assemblies without all the bloat.
+**Docpal** is a Markdown documentation generator for .NET assemblies without all the bloat.
 It's simple, straightforward, and easy to use.
 
 Take your EXE or DLL and do this:
@@ -51,3 +52,7 @@ Here are the options it can currently use:
 |------|-----------|
 |`-out [path]`|Specifies the path where the docs will be saved.|
 |`--slim`|Specifies that the docs will be combined into a single .md file.|
+
+## Compiling
+
+Docpal is written in C# 7 and requires Visual Studio 2017 to compile.
