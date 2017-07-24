@@ -25,9 +25,9 @@
 
 using System.Reflection;
 
-namespace Docpal
+namespace Docpal.Pages
 {
-	public class FieldPage : Page
+	class FieldPage : Page
 	{
 		private readonly FieldInfo _field;
 
@@ -37,7 +37,7 @@ namespace Docpal
 			Title = $"{DocUtilities.GetFieldSignature(_field, false)} field ({DocUtilities.GetDisplayTitle(_field.DeclaringType)})";
 		}
 
-		public override void Render(Node parent, MarkdownWriter writer)
+		public override void Render(PageTree parent, MarkdownWriter writer)
 		{
 			writer.WriteHeader(1, Title);
 			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");

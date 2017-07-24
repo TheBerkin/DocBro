@@ -25,9 +25,9 @@
 
 using System.Reflection;
 
-namespace Docpal
+namespace Docpal.Pages
 {
-	public class PropertyPage : Page
+	class PropertyPage : Page
 	{
 		private readonly PropertyInfo _property;
 
@@ -37,7 +37,7 @@ namespace Docpal
 			Title = $"{DocUtilities.GetPropertySignature(_property, false, false, false)} property ({DocUtilities.GetDisplayTitle(_property.DeclaringType)})";
 		}
 
-		public override void Render(Node parent, MarkdownWriter writer)
+		public override void Render(PageTree parent, MarkdownWriter writer)
 		{
 			writer.WriteHeader(1, Title);
 			writer.WriteParagraph(Docs?.Summary ?? "_(No Description)_");

@@ -21,6 +21,7 @@ namespace Docpal
 			var outputPath = Args.Property("out", "docs");
 			bool ignoreXML = Args.Flag("noxml");
 
+			// Check whether the file even exists
 			if (!File.Exists(dllPath))
 			{
 				Console.WriteLine($"File '{dllPath}' does not exist.");
@@ -29,9 +30,13 @@ namespace Docpal
 
 			try
 			{
-				Console.WriteLine("Building...");
+				Console.WriteLine("Building docs...");
+
 				var dll = Assembly.LoadFile(dllPath);
+				DocpalGenerator docpal;
 				XmlDocument xmlData = null;
+
+				// Load XML document
 				if (File.Exists(xmlPath) && !ignoreXML)
 				{
 					xmlData = new XmlDocument();
@@ -43,16 +48,20 @@ namespace Docpal
 					Console.WriteLine("No XML docs found, using only assembly...");
 				}
 
-				var xmlDocs = new ProjectXmlDocs(xmlData);
+				var xmlDocs = new ProjectXmlDocs(xmlData);				
 
+				// Determine type of docs generator to use
 				if (Args.Flag("slim"))
 				{
-					DocpalSlim.BuildDocs(xmlDocs, dll, DocUtilities.ChangeExtension(outputPath, "md"));
+					docpal = new DocpalSlim(xmlDocs, dll);
 				}
 				else
 				{
-					DocpalPages.BuildDocs(xmlDocs, dll, outputPath);
+					docpal = new DocpalPages(xmlDocs, dll);
 				}
+				
+				// Run build
+				docpal.BuildDocs(outputPath);
 
 				Console.WriteLine("Done, enjoy!");
 

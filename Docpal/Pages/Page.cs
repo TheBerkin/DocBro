@@ -20,7 +20,8 @@
 // CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endregion
-namespace Docpal
+
+namespace Docpal.Pages
 {
 	public abstract class Page
 	{
@@ -33,6 +34,6 @@ namespace Docpal
 
 		public string Title { get; protected set; }
 
-		public abstract void Render(Node parent, MarkdownWriter writer);
+		public abstract void Render(PageTree parent, MarkdownWriter writer);
 	}
 }

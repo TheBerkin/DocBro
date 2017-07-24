@@ -43,12 +43,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Args.cs" />
+    <Compile Include="DocpalGenerator.cs" />
     <Compile Include="DocpalPages.cs" />
     <Compile Include="DocpalSlim.cs" />
     <Compile Include="ID.cs" />
     <Compile Include="MarkdownWriter.cs" />
     <Compile Include="MemberXmlDocs.cs" />
-    <Compile Include="Node.cs" />
+    <Compile Include="Pages\PageTree.cs" />
     <Compile Include="Pages\FieldPage.cs" />
     <Compile Include="Pages\MethodGroupPage.cs" />
     <Compile Include="Pages\Page.cs" />

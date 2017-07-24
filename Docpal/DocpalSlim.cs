@@ -29,19 +29,25 @@ using System.Xml;
 
 namespace Docpal
 {
-	static class DocpalSlim
+	class DocpalSlim : DocpalGenerator
 	{
 		private const string Lang = "csharp";
 
-		public static void BuildDocs(ProjectXmlDocs docs, Assembly dll, string outputFilePath)
+		public DocpalSlim(ProjectXmlDocs docs, Assembly asm) : base(docs, asm)
 		{
+		}
+
+		public override void BuildDocs(string outputPath)
+		{
+			outputPath = DocUtilities.ChangeExtension(outputPath, "md");
+
 			// Write markdown file
-			using (var writer = new MarkdownWriter(outputFilePath))
+			using (var writer = new MarkdownWriter(outputPath))
 			{
-				foreach (var type in dll.ExportedTypes.Where(t => !t.Name.StartsWith("_")).OrderBy(t => t.Name))
+				foreach (var type in Library.ExportedTypes.Where(t => !t.Name.StartsWith("_")).OrderBy(t => t.Name))
 				{
 					// Pull XML docs for type
-					var typeDocs = docs.GetDocs(ID.GetIDString(type));
+					var typeDocs = Docs[ID.GetIDString(type)];
 
 					// Header, e.g. "StringBuilder class (System)"
 					writer.WriteHeader(2, DocUtilities.GetTypeTitle(type, true), true);
@@ -56,16 +62,16 @@ namespace Docpal
 					writer.WriteCodeBlock(Lang, DocUtilities.GetClassSignature(type));
 
 					// Members
-					WriteConstructors(type, writer, docs);
-					WriteProperties(type, writer, docs);
-					WriteIndexers(type, writer, docs);
-					WriteFields(type, writer, docs);
-					WriteMethods(type, writer, docs);
+					WriteConstructors(type, writer);
+					WriteProperties(type, writer);
+					WriteIndexers(type, writer);
+					WriteFields(type, writer);
+					WriteMethods(type, writer);
 				}
 			}
 		}
 
-		private static void WriteMethods(Type type, MarkdownWriter writer, ProjectXmlDocs docs)
+		private void WriteMethods(Type type, MarkdownWriter writer)
 		{
 			var methods = type.GetMethods()
 				.Where(m => !m.IsSpecialName)
@@ -78,7 +84,7 @@ namespace Docpal
 				writer.WriteHeader(3, "Methods");
 				foreach (var method in methods)
 				{
-					var methodDocs = docs.GetDocs(ID.GetIDString(method));
+					var methodDocs = Docs[ID.GetIDString(method)];
 
 					// Heading
 					writer.WriteHeader(4, DocUtilities.GetMethodSignature(method, false, false), true);
@@ -94,7 +100,7 @@ namespace Docpal
 			}
 		}
 
-		private static void WriteProperties(Type type, MarkdownWriter writer, ProjectXmlDocs docs)
+		private void WriteProperties(Type type, MarkdownWriter writer)
 		{
 			var props = type.GetProperties()
 				.Where(p => p.GetIndexParameters().Length == 0)
@@ -107,7 +113,7 @@ namespace Docpal
 
 			for (int i = 0; i < props.Length; i++)
 			{
-				var propDocs = docs.GetDocs(ID.GetIDString(props[i]));
+				var propDocs = Docs[ID.GetIDString(props[i])];
 				writer.WriteHeader(4, DocUtilities.GetPropertySignature(props[i], false, false, false));
 				PrintObsoleteWarning(props[i], writer);
 				Summary(propDocs, writer);
@@ -118,7 +124,7 @@ namespace Docpal
 			}
 		}
 
-		private static void WriteIndexers(Type type, MarkdownWriter writer, ProjectXmlDocs docs)
+		private void WriteIndexers(Type type, MarkdownWriter writer)
 		{
 			var indexers = type.GetProperties()
 				.Where(p => p.GetIndexParameters().Length > 0)
@@ -131,7 +137,7 @@ namespace Docpal
 
 			for (int i = 0; i < indexers.Length; i++)
 			{
-				var indexDocs = docs.GetDocs(ID.GetIDString(indexers[i]));
+				var indexDocs = Docs[ID.GetIDString(indexers[i])];
 				writer.WriteHeader(4, DocUtilities.GetPropertySignature(indexers[i], false, true, false));
 				PrintObsoleteWarning(indexers[i], writer);
 				Summary(indexDocs, writer);
@@ -142,7 +148,7 @@ namespace Docpal
 			}
 		}
 
-		private static void WriteFields(Type type, MarkdownWriter writer, ProjectXmlDocs docs)
+		private void WriteFields(Type type, MarkdownWriter writer)
 		{
 			var fields = type.GetFields()
 				.Where(f => !f.IsSpecialName)
@@ -155,7 +161,7 @@ namespace Docpal
 
 			for (int i = 0; i < fields.Length; i++)
 			{
-				var fieldDocs = docs.GetDocs(ID.GetIDString(fields[i]));
+				var fieldDocs = Docs[ID.GetIDString(fields[i])];
 				writer.WriteHeader(4, DocUtilities.GetFieldSignature(fields[i], false));
 				PrintObsoleteWarning(fields[i], writer);
 				Summary(fieldDocs, writer);
@@ -166,14 +172,14 @@ namespace Docpal
 			}
 		}
 
-		private static void PrintObsoleteWarning(MemberInfo member, MarkdownWriter writer)
+		private void PrintObsoleteWarning(MemberInfo member, MarkdownWriter writer)
 		{
 			var obsAttr = member.GetCustomAttribute<ObsoleteAttribute>();
 			if (obsAttr == null) return;
 			writer.WriteInfoBox($"**This item is deprecated.**\n{obsAttr.Message}", "warning");
 		}
 
-		private static void WriteParamList(int rank, MethodBase method, MarkdownWriter writer, MemberXmlDocs docs)
+		private void WriteParamList(int rank, MethodBase method, MarkdownWriter writer, MemberXmlDocs docs)
 		{
 			var plist = method.GetParameters();
 
@@ -198,7 +204,7 @@ namespace Docpal
 			}
 		}
 
-		private static void WriteConstructors(Type type, MarkdownWriter writer, ProjectXmlDocs docs)
+		private void WriteConstructors(Type type, MarkdownWriter writer)
 		{
 			// Constructor list
 			var ctors = type.GetConstructors();
@@ -209,7 +215,7 @@ namespace Docpal
 				for (int i = 0; i < ctors.Length; i++)
 				{
 					// Heading for constructor section
-					var ctorDocs = docs.GetDocs(ID.GetIDString(ctors[i]));
+					var ctorDocs = Docs[ID.GetIDString(ctors[i])];
 					writer.WriteHeader(4, DocUtilities.GetMethodSignature(ctors[i], false, false));
 					PrintObsoleteWarning(ctors[i], writer);
 					Summary(ctorDocs, writer);

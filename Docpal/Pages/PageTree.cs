@@ -25,32 +25,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Docpal
+namespace Docpal.Pages
 {
-	public sealed class Node
+	public sealed class PageTree
 	{
-		private readonly Dictionary<string, Node> _children;
+		private readonly Dictionary<string, PageTree> _children;
 
 		public string Name { get; }
 		public string Path { get; }
 
 		public Page Page { get; set; }
 
-		public Node Parent { get; }
+		public PageTree Parent { get; }
 
-		public Node(string name)
+		public PageTree(string name)
 		{
 			Name = name;
 			Path = name;
-			_children = new Dictionary<string, Node>();
+			_children = new Dictionary<string, PageTree>();
 			Parent = null;
 		}
 
-		private Node(string name, Node parent)
+		private PageTree(string name, PageTree parent)
 		{
 			Name = name;
 			Path = $"{parent.Path}/{name}";
-			_children = new Dictionary<string, Node>();
+			_children = new Dictionary<string, PageTree>();
 			Parent = parent;
 		}
 
@@ -58,7 +58,7 @@ namespace Docpal
 		{
 			get
 			{
-				Node child = this;
+				PageTree child = this;
 				var parts = path.Split('/').Select(str => str.Trim());
 				foreach (var part in parts)
 				{
@@ -69,19 +69,19 @@ namespace Docpal
 			}
 			set
 			{
-				Node child = this;
+				PageTree child = this;
 				var parts = path.Split('/').Select(str => str.Trim());
 				foreach (var part in parts)
 				{
 					if (String.IsNullOrWhiteSpace(part)) return;
-					if (child._children.TryGetValue(part, out Node foundChild))
+					if (child._children.TryGetValue(part, out PageTree foundChild))
 					{
 						child = foundChild;
 					}
 					else
 					{
 						var oldChild = child;
-						child = child._children[part] = new Node(part, oldChild);
+						child = child._children[part] = new PageTree(part, oldChild);
 					}
 				}
 				child.Page = value;
@@ -89,9 +89,9 @@ namespace Docpal
 			}
 		}
 
-		public Node GetNode(string path)
+		public PageTree GetNode(string path)
 		{
-			Node child = this;
+			PageTree child = this;
 			var parts = path.Split('/').Select(str => str.Trim());
 			foreach (var part in parts)
 			{

@@ -25,9 +25,9 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace Docpal
+namespace Docpal.Pages
 {
-	public class TypePage : Page
+	class TypePage : Page
 	{
 		public Type Type { get; }
 
@@ -59,7 +59,7 @@ namespace Docpal
 			}
 		}
 
-		public override void Render(Node parent, MarkdownWriter writer)
+		public override void Render(PageTree parent, MarkdownWriter writer)
 		{
 			writer.WriteHeader(1, Title);
 			writer.WriteParagraph($"**Namespace:** {Type.Namespace}");

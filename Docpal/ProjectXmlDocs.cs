@@ -10,9 +10,11 @@ namespace Docpal
 	class ProjectXmlDocs
 	{
 		private readonly Dictionary<string, MemberXmlDocs> _docs;
+		private readonly XmlDocument _xml;
 
 		public ProjectXmlDocs(XmlDocument xml)
 		{
+			_xml = xml;
 			foreach (XmlNode item in xml.SelectNodes("//doc/members/member"))
 			{
 				var id = item.Attributes["name"].Value;
@@ -35,6 +37,8 @@ namespace Docpal
 			}
 		}
 
-		public MemberXmlDocs GetDocs(string memberId) => _docs.TryGetValue(memberId, out MemberXmlDocs docs) ? docs : null;
+		public XmlDocument Xml => _xml;
+		
+		public MemberXmlDocs this[string memberId] => _docs.TryGetValue(memberId, out MemberXmlDocs docs) ? docs : null;
 	}
 }

@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Docpal
+namespace Docpal.Pages
 {
 	public class MethodGroupPage : Page
 	{
@@ -40,7 +40,7 @@ namespace Docpal
 			Title = $"{DocUtilities.GetDisplayTitle(type)}.{DocUtilities.GetIdentifier(name)} method";
 		}
 
-		public override void Render(Node parent, MarkdownWriter writer)
+		public override void Render(PageTree parent, MarkdownWriter writer)
 		{
 			writer.WriteHeader(1, Title);
 			foreach (var data in _methodData.OrderBy(m => m.Key.GetParameters().Length))

@@ -21,30 +21,33 @@
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-using System;
+using Docpal.Pages;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace Docpal
 {
-	static class DocpalPages
+	class DocpalPages : DocpalGenerator
 	{
-		public static void BuildDocs(ProjectXmlDocs docs, Assembly dll, string outputDir)
+		public DocpalPages(ProjectXmlDocs docs, Assembly asm) : base(docs, asm)
 		{
-			var pages = new Node("docs");
-			var pageNodes = new List<Node>();
+		}
 
-			foreach (var type in dll.GetExportedTypes())
+		public override void BuildDocs(string outputPath)
+		{
+			var pages = new PageTree("docs");
+			var PageTrees = new List<PageTree>();
+
+			foreach (var type in Library.GetExportedTypes())
 			{
 				var typePath = $"{type.Namespace.Replace('.', '/')}/{DocUtilities.GetURLTitle(type)}";
-				var typeData = docs.GetDocs(ID.GetIDString(type));
+				var typeData = Docs[ID.GetIDString(type)];
 
 				pages[typePath] = new TypePage(type, typeData);
-				pageNodes.Add(pages.GetNode(typePath));
+				PageTrees.Add(pages.GetNode(typePath));
 
 				// Constructors
 				var ctors = type.GetConstructors();
@@ -54,7 +57,7 @@ namespace Docpal
 					foreach (var ctor in ctors)
 					{
 						var ctorPath = $"{typePath}/new/{ctorNum}";
-						var methodData = docs.GetDocs(ID.GetIDString(ctor));
+						var methodData = Docs[ID.GetIDString(ctor)];
 						// TODO: Generate constructor pages
 						ctorNum++;
 					}
@@ -73,28 +76,28 @@ namespace Docpal
 
 					foreach (var method in methodGroup)
 					{
-						var methodData = docs.GetDocs(ID.GetIDString(method));
+						var methodData = Docs[ID.GetIDString(method)];
 						methods[method] = methodData;
 					}
 
 					pages[methodGroupPath] = new MethodGroupPage(type, methodGroup.Key, methods);
-					pageNodes.Add(pages.GetNode(methodGroupPath));
+					PageTrees.Add(pages.GetNode(methodGroupPath));
 				}
 
 				// Fields
 				foreach (var field in type.GetFields().Where(f => (f.IsPublic || !f.IsPrivate) && (!f.DeclaringType.IsEnum || !f.IsSpecialName)))
 				{
 					var fieldPath = Path.Combine(typePath, field.Name).Replace('\\', '/');
-					var fieldData = docs.GetDocs(ID.GetIDString(field));
+					var fieldData = Docs[ID.GetIDString(field)];
 					pages[fieldPath] = new FieldPage(field, fieldData);
-					pageNodes.Add(pages.GetNode(fieldPath));
+					PageTrees.Add(pages.GetNode(fieldPath));
 				}
 
 				// Properties and Indexers
 				int numIndexers = 0;
 				foreach (var property in type.GetProperties())
 				{
-					var propData = docs.GetDocs(ID.GetIDString(property));
+					var propData = Docs[ID.GetIDString(property)];
 
 					string propPath;
 					if (property.GetIndexParameters().Length > 0)
@@ -107,18 +110,19 @@ namespace Docpal
 					}
 
 					pages[propPath] = new PropertyPage(property, propData);
-					pageNodes.Add(pages.GetNode(propPath));
+					PageTrees.Add(pages.GetNode(propPath));
 				}
 			}
 
-			var exportTasks = new Task[pageNodes.Count];
-			for (int i = 0; i < pageNodes.Count; i++)
+			// Create a task for each document that needs to be exported, run them all at once
+			var exportTasks = new Task[PageTrees.Count];
+			for (int i = 0; i < PageTrees.Count; i++)
 			{
-				var node = pageNodes[i];
+				var node = PageTrees[i];
 				exportTasks[i] = Task.Run(() =>
 				{
-					var documentDir = Directory.GetParent($"{outputDir}/{node.Path}").FullName;
-					var documentPath = $"{outputDir}/{node.Path}.md";
+					var documentDir = Directory.GetParent($"{outputPath}/{node.Path}").FullName;
+					var documentPath = $"{outputPath}/{node.Path}.md";
 					Directory.CreateDirectory(documentDir);
 					using (var writer = new MarkdownWriter(documentPath))
 					{
@@ -126,6 +130,8 @@ namespace Docpal
 					}
 				});
 			}
+
+			// Wait for all export tasks to finish
 			Task.WaitAll(exportTasks);
 		}
 	}
