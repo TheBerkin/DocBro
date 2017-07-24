@@ -51,7 +51,9 @@ Here are the options it can currently use:
 |Option|Description|
 |------|-----------|
 |`-out [path]`|Specifies the path where the docs will be saved.|
+|`-xml [path]`|Specifies a custom XML documentation path.|
 |`--slim`|Specifies that the docs will be combined into a single .md file.|
+|`--noxml`|Don't use XML.|
 
 ## Compiling
 

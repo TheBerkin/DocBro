@@ -17,8 +17,9 @@ namespace Docpal
 			}
 
 			var dllPath = paths[0];
-			var xmlPath = DocUtilities.ChangeExtension(dllPath, "xml");
+			var xmlPath = Args.Property("xml", DocUtilities.ChangeExtension(dllPath, "xml"));
 			var outputPath = Args.Property("out", "docs");
+			bool ignoreXML = Args.Flag("noxml");
 
 			if (!File.Exists(dllPath))
 			{
@@ -31,7 +32,7 @@ namespace Docpal
 				Console.WriteLine("Building...");
 				var dll = Assembly.LoadFile(dllPath);
 				XmlDocument xml = null;
-				if (File.Exists(xmlPath))
+				if (File.Exists(xmlPath) && !ignoreXML)
 				{
 					xml = new XmlDocument();
 					xml.Load(xmlPath);
