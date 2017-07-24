@@ -27,7 +27,13 @@ using System.Text;
 
 namespace Docpal
 {
-	public static class ID
+	/// <summary>
+	/// Provides methods for generating ID strings from reflected types and members.
+	/// <para>
+	/// For information on how these ID strings work, see here: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
+	/// </para>
+	/// </summary>
+	static class ID
 	{
 		public static string GetIDString(Type type)
 		{

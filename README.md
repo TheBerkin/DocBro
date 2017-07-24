@@ -33,7 +33,7 @@ If there is one, its contents will be automatically extracted into the docs.
 **No extra setup required.**
 
 ### Show only what's important
-Unlike some other docs generators, Docpal only looks at public types and members. 
+Unlike some other tools, Docpal only looks at user-facing types and members.
 
 ### Two output styles
 Many pages or one -- it's up to you!

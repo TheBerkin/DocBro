@@ -48,6 +48,7 @@
     <Compile Include="DocpalSlim.cs" />
     <Compile Include="ID.cs" />
     <Compile Include="MarkdownWriter.cs" />
+    <Compile Include="MemberVisibility.cs" />
     <Compile Include="MemberXmlDocs.cs" />
     <Compile Include="Pages\PageTree.cs" />
     <Compile Include="Pages\FieldPage.cs" />

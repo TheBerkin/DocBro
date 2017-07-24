@@ -31,6 +31,7 @@ namespace Docpal
 {
 	class DocpalSlim : DocpalGenerator
 	{
+		private const BindingFlags MemberSearchFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 		private const string Lang = "csharp";
 
 		public DocpalSlim(ProjectXmlDocs docs, Assembly asm) : base(docs, asm)
@@ -73,9 +74,16 @@ namespace Docpal
 
 		private void WriteMethods(Type type, MarkdownWriter writer)
 		{
-			var methods = type.GetMethods()
-				.Where(m => !m.IsSpecialName)
+			var methods = type.GetMethods(MemberSearchFlags)
+				// Exclude compiler-generated and internal methods
+				.Where(m => !m.IsSpecialName && !m.IsAssembly)
+				// Exclude protected methods when class is sealed
+				.Where(m => type.IsSealed
+					? m.IsPublic
+					: !m.IsPrivate)
+				// Sort alphabetically...
 				.OrderBy(m => m.Name)
+				// ... then by parameter count.
 				.ThenBy(m => m.GetParameters().Length)
 				.ToArray();
 
@@ -102,8 +110,14 @@ namespace Docpal
 
 		private void WriteProperties(Type type, MarkdownWriter writer)
 		{
-			var props = type.GetProperties()
+			var props = type.GetProperties(MemberSearchFlags)
+				// Show protected members if class is not sealed
+				.Where(p => type.IsSealed 
+					? (p.CanRead && p.GetGetMethod().IsPublic) || (p.CanWrite && p.GetSetMethod().IsPublic)
+					: (p.CanRead && !p.GetGetMethod().IsPrivate) || (p.CanWrite && !p.GetSetMethod().IsPrivate))
+				// Indexers are technically properties, but we want to handle them separately
 				.Where(p => p.GetIndexParameters().Length == 0)
+				// Sort alphabetically
 				.OrderBy(p => p.Name)
 				.ToArray();
 

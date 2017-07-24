@@ -30,8 +30,9 @@ using System.Text;
 
 namespace Docpal
 {
-	public static class DocUtilities
+	static class DocUtilities
 	{
+		private const string Indent = "    ";
 		private static readonly Dictionary<Type, string> primitiveNames;
 		private static readonly Dictionary<string, string> operations;
 
@@ -265,7 +266,15 @@ namespace Docpal
 			var sb = new StringBuilder();
 			if (fullDefinition)
 			{
-				if (field.IsPublic) sb.Append("public ");
+				if (field.IsPublic)
+				{
+					sb.Append("public ");
+				}
+				else if (field.IsFamily)
+				{
+					sb.Append("protected ");
+				}
+
 				if (field.IsLiteral)
 				{
 					sb.Append("const ");
@@ -300,27 +309,41 @@ namespace Docpal
 			bool canWrite = property.CanWrite;
 			var getter = property.GetGetMethod(true);
 			var setter = property.GetSetMethod(true);
-			
+			bool isGetterProtected = (canRead && !getter.IsPublic && !getter.IsPrivate);
+			bool isSetterProtected = (canWrite && !setter.IsPublic && !setter.IsPrivate);
+			bool hasPublicAccessor = (canRead && getter.IsPublic) || (canWrite && setter.IsPublic);
+			bool hasProtectedAccessor = isGetterProtected || isSetterProtected;
+			bool isProtectedProperty = !hasPublicAccessor && hasProtectedAccessor;
+			bool isStatic = canRead && getter.IsStatic || canWrite && setter.IsStatic;
+			bool isAbstract = canRead && getter.IsAbstract || canWrite && setter.IsAbstract;
+			bool isOverride = property.DeclaringType != property.ReflectedType;
+			bool isVirtual = canRead && getter.IsVirtual || canWrite && setter.IsVirtual;
+
 			if (includeKeywords)
 			{
-				if ((canRead && getter.IsPublic) || (canWrite && setter.IsPublic))
+				if (hasPublicAccessor)
 				{
 					sb.Append("public ");
 				}
+				else if (isProtectedProperty)
+				{
+					sb.Append("protected ");
+				}
 
-				if (canRead && getter.IsStatic || canWrite && setter.IsStatic)
+				if (isStatic)
 				{
 					sb.Append("static ");
 				}
-				else if (canRead && getter.IsAbstract || canWrite && setter.IsAbstract)
+				else if (isAbstract)
 				{
 					sb.Append("abstract ");
 				}
-				if (property.DeclaringType != property.ReflectedType)
+
+				if (isOverride)
 				{
 					sb.Append("override ");
 				}
-				else if (canRead && getter.IsVirtual || canWrite && setter.IsVirtual)
+				else if (isVirtual)
 				{
 					sb.Append("virtual ");
 				}
@@ -349,8 +372,29 @@ namespace Docpal
 			{
 				sb.Append("\n{\n");
 
-				if (canRead) sb.Append("    get;\n");
-				if (canWrite) sb.Append("    set;\n");
+				// Print getter
+				if (canRead)
+				{
+					sb.Append(Indent);
+					// Add protected keyword if property has public accessor
+					if (hasPublicAccessor && isGetterProtected)
+					{
+						sb.Append("protected ");
+					}
+					sb.Append("get;\n");
+				}
+
+				// Print setter
+				if (canWrite)
+				{
+					sb.Append(Indent);
+					// Add protected keyword if property has public accessor
+					if (hasPublicAccessor & isSetterProtected)
+					{
+						sb.Append("protected ");
+					}
+					sb.Append("set;\n");
+				}
 
 				sb.Append("}");
 			}
@@ -400,7 +444,15 @@ namespace Docpal
 
 			if (includeKeywords)
 			{
-				if (method.IsPublic) sb.Append("public ");
+				if (method.IsPublic)
+				{
+					sb.Append("public ");
+				}
+				else if (method.IsFamily || method.IsFamilyOrAssembly)
+				{
+					sb.Append("protected ");
+				}
+
 				if (method.IsStatic)
 				{
 					sb.Append("static ");
@@ -554,6 +606,32 @@ namespace Docpal
 			if (type.IsPointer) sb.Append('*');
 
 			return sb.ToString();
+		}
+
+		public static MemberVisibility GetVisibility(FieldInfo field)
+		{
+			if (field.IsPrivate) return MemberVisibility.Private;
+
+			if (field.IsPublic) return MemberVisibility.Public;
+
+			if (field.IsFamilyOrAssembly) return MemberVisibility.ProtectedInternal;
+
+			if (field.IsFamily) return MemberVisibility.Protected;
+
+			return MemberVisibility.Internal;
+		}
+
+		public static MemberVisibility GetVisibility(MethodBase method)
+		{
+			if (method.IsPrivate) return MemberVisibility.Private;
+
+			if (method.IsPublic) return MemberVisibility.Public;
+
+			if (method.IsFamilyOrAssembly) return MemberVisibility.ProtectedInternal;
+
+			if (method.IsFamily) return MemberVisibility.Protected;
+
+			return MemberVisibility.Internal;
 		}
 	}
 }
