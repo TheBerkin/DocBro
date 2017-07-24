@@ -31,11 +31,11 @@ namespace Docpal
 			{
 				Console.WriteLine("Building...");
 				var dll = Assembly.LoadFile(dllPath);
-				XmlDocument xml = null;
+				XmlDocument xmlData = null;
 				if (File.Exists(xmlPath) && !ignoreXML)
 				{
-					xml = new XmlDocument();
-					xml.Load(xmlPath);
+					xmlData = new XmlDocument();
+					xmlData.Load(xmlPath);
 					Console.WriteLine($"Found XML: {xmlPath}");
 				}
 				else
@@ -43,13 +43,15 @@ namespace Docpal
 					Console.WriteLine("No XML docs found, using only assembly...");
 				}
 
+				var xmlDocs = new ProjectXmlDocs(xmlData);
+
 				if (Args.Flag("slim"))
 				{
-					DocpalSlim.BuildDocs(xml, dll, DocUtilities.ChangeExtension(outputPath, "md"));
+					DocpalSlim.BuildDocs(xmlDocs, dll, DocUtilities.ChangeExtension(outputPath, "md"));
 				}
 				else
 				{
-					DocpalPages.BuildDocs(xml, dll, outputPath);
+					DocpalPages.BuildDocs(xmlDocs, dll, outputPath);
 				}
 
 				Console.WriteLine("Done, enjoy!");

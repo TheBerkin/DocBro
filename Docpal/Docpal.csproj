@@ -55,6 +55,7 @@
     <Compile Include="Pages\PropertyPage.cs" />
     <Compile Include="Pages\TypePage.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="ProjectXmlDocs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DocUtilities.cs" />
   </ItemGroup>

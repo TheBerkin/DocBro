@@ -31,36 +31,22 @@ using System.Xml;
 
 namespace Docpal
 {
-	public static class DocpalPages
+	static class DocpalPages
 	{
-		public static void BuildDocs(XmlDocument xml, Assembly dll, string outputDir)
+		public static void BuildDocs(ProjectXmlDocs docs, Assembly dll, string outputDir)
 		{
-			var docs = new Node("Main");
+			var pages = new Node("docs");
 			var pageNodes = new List<Node>();
-			var meta = new Dictionary<string, MemberXmlDocs>();
-			foreach (XmlNode item in xml.SelectNodes("//doc/members/member"))
-			{
-				var id = item.Attributes["name"].Value;
-				var data = meta[id] = new MemberXmlDocs
-				{
-					Summary = item.SelectSingleNode("summary")?.InnerText.Trim() ?? "(No Description)",
-					Returns = item.SelectSingleNode("returns")?.InnerText.Trim() ?? String.Empty
-				};
-
-				foreach (XmlNode desc in item.SelectNodes("param"))
-				{
-					data.SetParameterDescription(desc.Attributes["name"].Value, desc.InnerText.Trim());
-				}
-			}
 
 			foreach (var type in dll.GetExportedTypes())
 			{
 				var typePath = $"{type.Namespace.Replace('.', '/')}/{DocUtilities.GetURLTitle(type)}";
-				meta.TryGetValue(ID.GetIDString(type), out MemberXmlDocs typeData);
+				var typeData = docs.GetDocs(ID.GetIDString(type));
 
-				docs[typePath] = new TypePage(type, typeData);
-				pageNodes.Add(docs.GetNode(typePath));
+				pages[typePath] = new TypePage(type, typeData);
+				pageNodes.Add(pages.GetNode(typePath));
 
+				// Constructors
 				var ctors = type.GetConstructors();
 				if (ctors.Length > 0)
 				{
@@ -68,9 +54,8 @@ namespace Docpal
 					foreach (var ctor in ctors)
 					{
 						var ctorPath = $"{typePath}/new/{ctorNum}";
-						if (meta.TryGetValue(ID.GetIDString(ctor), out MemberXmlDocs methodData))
-						{
-						}
+						var methodData = docs.GetDocs(ID.GetIDString(ctor));
+						// TODO: Generate constructor pages
 						ctorNum++;
 					}
 				}
@@ -88,28 +73,28 @@ namespace Docpal
 
 					foreach (var method in methodGroup)
 					{
-						meta.TryGetValue(ID.GetIDString(method), out MemberXmlDocs methodData);
+						var methodData = docs.GetDocs(ID.GetIDString(method));
 						methods[method] = methodData;
 					}
 
-					docs[methodGroupPath] = new MethodGroupPage(type, methodGroup.Key, methods);
-					pageNodes.Add(docs.GetNode(methodGroupPath));
+					pages[methodGroupPath] = new MethodGroupPage(type, methodGroup.Key, methods);
+					pageNodes.Add(pages.GetNode(methodGroupPath));
 				}
 
 				// Fields
 				foreach (var field in type.GetFields().Where(f => (f.IsPublic || !f.IsPrivate) && (!f.DeclaringType.IsEnum || !f.IsSpecialName)))
 				{
 					var fieldPath = Path.Combine(typePath, field.Name).Replace('\\', '/');
-					meta.TryGetValue(ID.GetIDString(field), out MemberXmlDocs fieldData);
-					docs[fieldPath] = new FieldPage(field, fieldData);
-					pageNodes.Add(docs.GetNode(fieldPath));
+					var fieldData = docs.GetDocs(ID.GetIDString(field));
+					pages[fieldPath] = new FieldPage(field, fieldData);
+					pageNodes.Add(pages.GetNode(fieldPath));
 				}
 
 				// Properties and Indexers
 				int numIndexers = 0;
 				foreach (var property in type.GetProperties())
 				{
-					meta.TryGetValue(ID.GetIDString(property), out MemberXmlDocs propData);
+					var propData = docs.GetDocs(ID.GetIDString(property));
 
 					string propPath;
 					if (property.GetIndexParameters().Length > 0)
@@ -121,8 +106,8 @@ namespace Docpal
 						propPath = $"{typePath}/{property.Name}";
 					}
 
-					docs[propPath] = new PropertyPage(property, propData);
-					pageNodes.Add(docs.GetNode(propPath));
+					pages[propPath] = new PropertyPage(property, propData);
+					pageNodes.Add(pages.GetNode(propPath));
 				}
 			}
 
