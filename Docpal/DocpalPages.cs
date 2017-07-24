@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace Docpal
@@ -125,16 +126,22 @@ namespace Docpal
 				}
 			}
 
-			foreach (var node in pageNodes)
+			var exportTasks = new Task[pageNodes.Count];
+			for (int i = 0; i < pageNodes.Count; i++)
 			{
-				var documentDir = Directory.GetParent($"{outputDir}/{node.Path}").FullName;
-				var documentPath = $"{outputDir}/{node.Path}.md";
-				Directory.CreateDirectory(documentDir);
-				using (var writer = new MarkdownWriter(documentPath))
+				var node = pageNodes[i];
+				exportTasks[i] = Task.Run(() =>
 				{
-					node.Page.Render(node, writer);
-				}
+					var documentDir = Directory.GetParent($"{outputDir}/{node.Path}").FullName;
+					var documentPath = $"{outputDir}/{node.Path}.md";
+					Directory.CreateDirectory(documentDir);
+					using (var writer = new MarkdownWriter(documentPath))
+					{
+						node.Page.Render(node, writer);
+					}
+				});
 			}
+			Task.WaitAll(exportTasks);
 		}
 	}
 }
