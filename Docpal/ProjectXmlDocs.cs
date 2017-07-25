@@ -14,6 +14,7 @@ namespace Docpal
 
 		public ProjectXmlDocs(XmlDocument xml)
 		{
+			_docs = new Dictionary<string, MemberXmlDocs>();
 			_xml = xml;
 			foreach (XmlNode item in xml.SelectNodes("//doc/members/member"))
 			{

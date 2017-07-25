@@ -113,8 +113,8 @@ namespace Docpal
 			var props = type.GetProperties(MemberSearchFlags)
 				// Show protected members if class is not sealed
 				.Where(p => type.IsSealed 
-					? (p.CanRead && p.GetGetMethod().IsPublic) || (p.CanWrite && p.GetSetMethod().IsPublic)
-					: (p.CanRead && !p.GetGetMethod().IsPrivate) || (p.CanWrite && !p.GetSetMethod().IsPrivate))
+					? (p.CanRead && p.GetMethod.IsPublic) || (p.CanWrite && p.SetMethod.IsPublic)
+					: (p.CanRead && !p.GetMethod.IsPrivate) || (p.CanWrite && !p.SetMethod.IsPrivate))
 				// Indexers are technically properties, but we want to handle them separately
 				.Where(p => p.GetIndexParameters().Length == 0)
 				// Sort alphabetically

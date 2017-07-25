@@ -16,9 +16,10 @@ namespace Docpal
 				return;
 			}
 
-			var dllPath = paths[0];
+			var dllPath = Path.GetFullPath(paths[0]);
 			var xmlPath = Args.Property("xml", DocUtilities.ChangeExtension(dllPath, "xml"));
 			var outputPath = Args.Property("out", "docs");
+			var outputDir = Path.GetDirectoryName(outputPath);
 			bool ignoreXML = Args.Flag("noxml");
 
 			// Check whether the file even exists
@@ -34,12 +35,11 @@ namespace Docpal
 
 				var dll = Assembly.LoadFile(dllPath);
 				DocpalGenerator docpal;
-				XmlDocument xmlData = null;
+				var xmlData = new XmlDocument();
 
 				// Load XML document
 				if (File.Exists(xmlPath) && !ignoreXML)
 				{
-					xmlData = new XmlDocument();
 					xmlData.Load(xmlPath);
 					Console.WriteLine($"Found XML: {xmlPath}");
 				}
@@ -59,7 +59,9 @@ namespace Docpal
 				{
 					docpal = new DocpalPages(xmlDocs, dll);
 				}
-				
+
+				Directory.CreateDirectory(outputDir);
+
 				// Run build
 				docpal.BuildDocs(outputPath);
 
@@ -69,6 +71,7 @@ namespace Docpal
 			catch (Exception e)
 			{
 				Console.WriteLine($"Unfortunately, there was an error.\n\n{e}");
+				Environment.Exit(1);
 			}
 		}
 	}
