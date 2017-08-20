@@ -30,7 +30,7 @@ namespace Docpal
 	/// <summary>
 	/// Provides methods for generating ID strings from reflected types and members.
 	/// <para>
-	/// For information on how these ID strings work, see here: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
+	/// For information on how ID strings work, see here: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
 	/// </para>
 	/// </summary>
 	static class ID
@@ -48,6 +48,27 @@ namespace Docpal
 		public static string GetIDString(FieldInfo field)
 		{
 			return $"F:{ConstructIDString(field.DeclaringType)}.{field.Name}";
+		}
+
+		public static MemberInfo ResolveMember(string id, Assembly alternateAssembly = null)
+		{
+			if (id == null) throw new ArgumentNullException(nameof(id));
+			if (String.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id), "ID cannot be empty.");
+			if (id.Length < 3) throw new ArgumentException(nameof(id), "ID is too short.");
+
+			char idType = id[0];
+			switch (idType)
+			{
+				case 'T':
+					{
+						var typeName = id.Substring(2);
+						Type.GetType()
+						var type = Type.GetType(typeName, false) ?? alternateAssembly.GetType(typeName);
+						return type;
+					}
+			}
+
+			return null;
 		}
 
 		public static string GetIDString(PropertyInfo property)
@@ -105,7 +126,7 @@ namespace Docpal
 			}
 			// e.g. Dictionary<string, int>
 			else if (type.IsConstructedGenericType)
-			{	
+			{
 				sb.Append($"{type.Namespace}.{bareName.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture))}");
 				sb.Append('{');
 				for (int i = 0; i < type.GenericTypeArguments.Length; i++)

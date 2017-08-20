@@ -23,34 +23,56 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Xml;
 
 namespace Docpal
 {
 	public sealed class MemberXmlDocs
 	{
+		private const string NoDescription = "(No Description)";
 		private readonly Dictionary<string, string> _params = new Dictionary<string, string>();
 		private readonly Dictionary<string, string> _typeParams = new Dictionary<string, string>();
 
-		public string Summary { get; set; }
-		public string Returns { get; set; }
-		public string Remarks { get; set; }
+		public MemberXmlDocs(XmlNode item)
+		{
+			if (item == null) throw new ArgumentNullException(nameof(item));
+
+			Summary = item.SelectSingleNode("summary")?.InnerText.Trim() ?? NoDescription;
+			Returns = item.SelectSingleNode("returns")?.InnerText.Trim() ?? String.Empty;
+			Remarks = item.SelectSingleNode("remarks")?.InnerText.Trim() ?? String.Empty;
+
+			foreach (XmlNode desc in item.SelectNodes("param"))
+			{
+				SetParameterDescription(desc.Attributes["name"].Value, desc.InnerText.Trim());
+			}
+
+			foreach (XmlNode desc in item.SelectNodes("typeparam"))
+			{
+				SetTypeParameterDescription(desc.Attributes["name"].Value, desc.InnerText.Trim());
+			}
+		}
+
+		public string Summary { get; }
+		public string Returns { get; }
+		public string Remarks { get; }
 
 		public bool HasParameters => _params.Count > 0;
 		public bool HasTypeParameters => _typeParams.Count > 0;
 
-		public void SetParameterDescription(string paramName, string description) => _params[paramName] = description;
+		private void SetParameterDescription(string paramName, string description) => _params[paramName] = description;
 
 		public string GetParameterDescription(string paramName)
 		{
-			return _params.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
+			return _params.TryGetValue(paramName, out string desc) ? desc : NoDescription;
 		}
 
-		public void SetTypeParameterDescription(string paramName, string description) => _typeParams[paramName] = description;
+		private void SetTypeParameterDescription(string paramName, string description) => _typeParams[paramName] = description;
 
 		public string GetTypeParameterDescription(string paramName)
 		{
-			return _typeParams.TryGetValue(paramName, out string desc) ? desc : "(No Description)";
+			return _typeParams.TryGetValue(paramName, out string desc) ? desc : NoDescription;
 		}
 	}
 }

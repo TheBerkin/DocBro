@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Xml;
 
 namespace Docpal
@@ -36,6 +37,33 @@ namespace Docpal
 
 		public DocpalSlim(ProjectXmlDocs docs, Assembly asm) : base(docs, asm)
 		{
+		}
+
+		protected override string GetMarkdownString(XmlNode textNode)
+		{
+			var sb = new StringBuilder();
+			foreach (XmlNode node in textNode)
+			{
+				switch (node.NodeType)
+				{
+					case XmlNodeType.Text:
+						sb.Append(node.InnerText);
+						break;
+					case XmlNodeType.Element:
+						switch (node.Name)
+						{
+							case "see":
+								sb.Append(TranslateCref(node.Attributes["cref"].Value));
+								break;
+						}
+						break;
+				}
+			}
+		}
+
+		private string TranslateCref(string cref)
+		{
+
 		}
 
 		public override void BuildDocs(string outputPath)
@@ -112,7 +140,7 @@ namespace Docpal
 		{
 			var props = type.GetProperties(MemberSearchFlags)
 				// Show protected members if class is not sealed
-				.Where(p => type.IsSealed 
+				.Where(p => type.IsSealed
 					? (p.CanRead && p.GetMethod.IsPublic) || (p.CanWrite && p.SetMethod.IsPublic)
 					: (p.CanRead && !p.GetMethod.IsPrivate) || (p.CanWrite && !p.SetMethod.IsPrivate))
 				// Indexers are technically properties, but we want to handle them separately
