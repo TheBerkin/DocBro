@@ -33,7 +33,7 @@ namespace Docpal
 			{
 				Console.WriteLine("Building docs...");
 
-				var dll = Assembly.LoadFile(dllPath);
+				var dll = Assembly.LoadFrom(dllPath);
 				DocpalGenerator docpal;
 				var xmlData = new XmlDocument();
 
