@@ -15,7 +15,8 @@ namespace Docpal
 				Console.WriteLine($"Usage: {AppDomain.CurrentDomain.FriendlyName} [OPTIONS]... <path_to_dll> -out <output_folder>");
                 Console.WriteLine();
                 Console.WriteLine($"Options:");
-                Console.WriteLine($"  --mgtable    methods groups in type page will reported in a table with summary foreach method in the group");
+                Console.WriteLine($"  --mgtable      methods groups in type page will reported in a table with summary foreach method in the group");
+                Console.WriteLine($"  --proptable    properties in type page will reported in a table with summary foreach");
 				return;
 			}
 

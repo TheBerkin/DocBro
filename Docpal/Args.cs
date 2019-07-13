@@ -41,6 +41,7 @@ namespace Docpal
         public static readonly bool Help;
 
         public static readonly bool MethodGroupsTable;
+        public static readonly bool PropertiesTable;
 
         static Args()
         {
@@ -73,6 +74,7 @@ namespace Docpal
                 {
                     var flag = args[i].TrimStart('-');
                     if (flag == "mgtable") MethodGroupsTable = true;
+                    else if (flag == "proptable") PropertiesTable = true;
                     Flags.Add(flag);
                 }
                 else if (args[i].StartsWith("-"))

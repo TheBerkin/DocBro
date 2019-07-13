@@ -30,12 +30,12 @@ namespace Docpal.Pages
     class TypePage : Page
     {
         public Type Type { get; }
-        
+
         private readonly ProjectXmlDocs _prjDocs;
-        
+
         public TypePage(Type type, MemberXmlDocs docs, ProjectXmlDocs prjDocs) : base(docs)
         {
-            Type = type;            
+            Type = type;
             _prjDocs = prjDocs;
 
             var name = DocUtilities.GetDisplayTitle(type, false);
@@ -86,7 +86,7 @@ namespace Docpal.Pages
                 {
                     if (Args.MethodGroupsTable)
                     {
-                        foreach (var (method,idx) in methodGroup
+                        foreach (var (method, idx) in methodGroup
                             .OrderBy(m => m.GetParameters().Length)
                             .Select((method, idx) => (method, idx)))
                         {
@@ -124,12 +124,26 @@ namespace Docpal.Pages
             if (props.Length > 0)
             {
                 writer.WriteHeader(2, "Properties");
+                if (Args.PropertiesTable)
+                {
+                    writer.WriteLine("|**Name**|**Summary**|");
+                    writer.WriteLine("|---|---|");
+                }
                 foreach (var prop in props)
                 {
-                    var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(prop.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(prop.Name)}.md)");
+                    var sbLink = new StringBuilder($"[{DocUtilities.GetIdentifier(prop.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(prop.Name)}.md)");
                     bool isStatic = prop.CanRead && prop.GetGetMethod(true).IsStatic || prop.CanWrite && prop.GetSetMethod(true).IsStatic;
                     if (isStatic) sbLink.Append(" (static)");
-                    writer.WriteLine(sbLink.ToString());
+                    if (Args.PropertiesTable)
+                    {
+                        var summary = "";
+                        var doc = _prjDocs[ID.GetIDString(prop)];
+                        if (doc != null && !string.IsNullOrEmpty(doc.Summary))
+                            summary = doc.Summary.Replace("\n", "<br/>");
+                        writer.WriteLine($"|{sbLink.ToString()}|{summary}");
+                    }
+                    else
+                        writer.WriteLine($"- {sbLink.ToString()}");
                 }
             }
 
