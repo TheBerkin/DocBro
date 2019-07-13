@@ -46,7 +46,7 @@ namespace Docpal
 				var typePath = $"{type.Namespace.Replace('.', '/')}/{DocUtilities.GetURLTitle(type)}";
 				var typeData = Docs[ID.GetIDString(type)];
 
-				pages[typePath] = new TypePage(type, typeData);
+				pages[typePath] = new TypePage(type, typeData, Docs);
 				PageTrees.Add(pages.GetNode(typePath));
 
 				// Constructors

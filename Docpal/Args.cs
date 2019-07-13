@@ -29,76 +29,80 @@ using System.Linq;
 
 namespace Docpal
 {
-	internal static class Args
-	{
-		private static readonly Dictionary<string, List<string>> Arguments = new Dictionary<string, List<string>>();
-		private static readonly HashSet<string> Flags = new HashSet<string>();
-		private static readonly List<string> Paths = new List<string>();
+    internal static class Args
+    {
+        private static readonly Dictionary<string, List<string>> Arguments = new Dictionary<string, List<string>>();
+        private static readonly HashSet<string> Flags = new HashSet<string>();
+        private static readonly List<string> Paths = new List<string>();
 
-		/// <summary>
-		/// Determines whether the user specified a question mark as the argument.
-		/// </summary>
-		public static readonly bool Help;
+        /// <summary>
+        /// Determines whether the user specified a question mark as the argument.
+        /// </summary>
+        public static readonly bool Help;
 
-		static Args()
-		{
-			var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
-			int argc = args.Length;
-			if (argc == 0) return;
+        public static readonly bool MethodGroupsTable;
 
-			if (argc == 1 && args[0] == "?")
-			{
-				Help = true;
-				return;
-			}
+        static Args()
+        {
+            var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            int argc = args.Length;
+            if (argc == 0) return;
 
-			bool isProperty = false;
+            if (argc == 1 && args[0] == "?")
+            {
+                Help = true;
+                return;
+            }
 
-			for (int i = 0; i < args.Length; i++)
-			{
-				if (isProperty)
-				{
-					string name = args[i - 1].TrimStart('-');
-					if (Arguments.ContainsKey(name))
-						Arguments[name].Add(args[i]);
-					else
-					{
-						Arguments[name] = new List<string> { args[i] };
-					}
-					isProperty = false;
-				}
-				else if (args[i].StartsWith("--"))
-				{
-					Flags.Add(args[i].TrimStart('-'));
-				}
-				else if (args[i].StartsWith("-"))
-				{
-					isProperty = true;
-				}
-				else
-				{
-					Paths.Add(args[i]);
-				}
-			}
-		}
+            bool isProperty = false;
 
-		public static string[] GetPaths() => Paths.ToArray();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (isProperty)
+                {
+                    string name = args[i - 1].TrimStart('-');
+                    if (Arguments.ContainsKey(name))
+                        Arguments[name].Add(args[i]);
+                    else
+                    {
+                        Arguments[name] = new List<string> { args[i] };
+                    }
+                    isProperty = false;
+                }
+                else if (args[i].StartsWith("--"))
+                {
+                    var flag = args[i].TrimStart('-');
+                    if (flag == "mgtable") MethodGroupsTable = true;
+                    Flags.Add(flag);
+                }
+                else if (args[i].StartsWith("-"))
+                {
+                    isProperty = true;
+                }
+                else
+                {
+                    Paths.Add(args[i]);
+                }
+            }
+        }
 
-		public static string Property(string name)
-		{
-			return !Arguments.TryGetValue(name.ToLower(), out List<string> args) ? "" : args.First();
-		}
+        public static string[] GetPaths() => Paths.ToArray();
 
-		public static string Property(string name, string defaultValue)
-		{
-			return !Arguments.TryGetValue(name.ToLower(), out List<string> args) ? defaultValue : args.First();
-		}
+        public static string Property(string name)
+        {
+            return !Arguments.TryGetValue(name.ToLower(), out List<string> args) ? "" : args.First();
+        }
 
-		public static IEnumerable<string> Properties(string name)
-		{
-			return Arguments.TryGetValue(name.ToLower(), out List<string> args) ? args : new List<string>();
-		}
+        public static string Property(string name, string defaultValue)
+        {
+            return !Arguments.TryGetValue(name.ToLower(), out List<string> args) ? defaultValue : args.First();
+        }
 
-		public static bool Flag(string name) => Flags.Contains(name);
-	}
+        public static IEnumerable<string> Properties(string name)
+        {
+            return Arguments.TryGetValue(name.ToLower(), out List<string> args) ? args : new List<string>();
+        }
+
+        public static bool Flag(string name) => Flags.Contains(name);
+    }
 }
