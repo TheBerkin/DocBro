@@ -101,7 +101,7 @@ namespace Docpal.Pages
                             var summary = "";
                             var doc = _prjDocs[ID.GetIDString(method)];
                             if (doc != null && !string.IsNullOrEmpty(doc.Summary))
-                                summary = doc.Summary.Replace("\n", "<br/>");
+                                summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
 
                             writer.WriteLine($"|{sbLink.ToString()}|{summary}|");
                         }
@@ -139,7 +139,7 @@ namespace Docpal.Pages
                         var summary = "";
                         var doc = _prjDocs[ID.GetIDString(prop)];
                         if (doc != null && !string.IsNullOrEmpty(doc.Summary))
-                            summary = doc.Summary.Replace("\n", "<br/>");
+                            summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
                         writer.WriteLine($"|{sbLink.ToString()}|{summary}");
                     }
                     else
