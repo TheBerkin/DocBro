@@ -53,14 +53,18 @@ namespace Docpal
 				var ctors = type.GetConstructors();
 				if (ctors.Length > 0)
 				{
-					int ctorNum = 1;
-					foreach (var ctor in ctors)
-					{
-						var ctorPath = $"{typePath}/new/{ctorNum}";
-						var methodData = Docs[ID.GetIDString(ctor)];
-						// TODO: Generate constructor pages
-						ctorNum++;
-					}
+                    // Path to ctors group
+					var ctorsGroupPath = $"{typePath}/ctors";
+
+                    var ctorsData = new Dictionary<ConstructorInfo, MemberXmlDocs>();
+                    foreach (var ctor in ctors)
+                    {
+                        var ctorData = Docs[ID.GetIDString(ctor)];
+                        ctorsData.Add(ctor, ctorData);
+                    } 
+
+					pages[ctorsGroupPath] = new ConstructorsPage(type, ctors, ctorsData);
+					PageTrees.Add(pages.GetNode(ctorsGroupPath));                    
 				}
 
 				// Method groups

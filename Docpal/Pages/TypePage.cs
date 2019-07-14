@@ -73,6 +73,48 @@ namespace Docpal.Pages
             writer.WriteHeader(2, "Signature");
             writer.WriteCodeBlock("csharp", DocUtilities.GetClassSignature(Type));
 
+            var ctors = Type.GetConstructors().OrderBy(c => c.Name).ToArray();
+            if (ctors.Length > 0)
+            {
+                writer.WriteHeader(2, "Constructors");
+                if (Args.MethodGroupsTable)
+                {
+                    writer.WriteLine("|**Name**|**Summary**|");
+                    writer.WriteLine("|---|---|");
+                }
+                var ctorNum = 1;
+                foreach (var ctor in ctors)
+                {
+                    if (Args.MethodGroupsTable)
+                    {
+                        var anchor = "";
+                        if (ctorNum > 1) anchor = $"#{DocUtilities.GetAnchor(DocUtilities.GetMethodSignature(ctor, false, false))}";
+                        var sbLink = new StringBuilder();
+                        sbLink.Append($"[{DocUtilities.GetMethodSignature(ctor, false, false)}]");
+                        sbLink.Append($"({DocUtilities.GetURLTitle(Type)}/ctors.md{anchor})");
+                        bool isStatic = ctor.IsStatic;
+                        if (isStatic) sbLink.Append(" (static)");
+
+                        var summary = "";
+                        var doc = _prjDocs[ID.GetIDString(ctor)];
+                        if (doc != null && !string.IsNullOrEmpty(doc.Summary))
+                            summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
+
+                        writer.WriteLine($"|{sbLink.ToString()}|{summary}|");
+                    }
+                    else
+                    {
+                        var sbLink = new StringBuilder($"[{DocUtilities.GetMethodSignature(ctor, false, true)}]({DocUtilities.GetURLTitle(Type)}/ctors.md)");
+                        bool isStatic = ctor.IsStatic;
+                        if (isStatic) sbLink.Append(" (static)");
+
+                        writer.WriteLine($"- {sbLink.ToString()}");                        
+                    }
+
+                    ++ctorNum;
+                }
+            }
+
             var methods = Type.GetMethods().OrderBy(m => m.Name).ToArray();
             if (methods.Length > 0)
             {
