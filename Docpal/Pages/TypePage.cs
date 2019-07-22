@@ -27,110 +27,200 @@ using System.Text;
 
 namespace Docpal.Pages
 {
-	class TypePage : Page
-	{
-		public Type Type { get; }
+    class TypePage : Page
+    {
+        public Type Type { get; }
 
-		public TypePage(Type type, MemberXmlDocs docs) : base(docs)
-		{
-			Type = type;
+        private readonly ProjectXmlDocs _prjDocs;
 
-			var name = DocUtilities.GetDisplayTitle(type, false);
+        public TypePage(Type type, MemberXmlDocs docs, ProjectXmlDocs prjDocs) : base(docs)
+        {
+            Type = type;
+            _prjDocs = prjDocs;
 
-			if (type.IsEnum)
-			{
-				Title = $"{name} Enum";
-			}
-			else if (type.IsInterface)
-			{
-				Title = $"{name} Interface";
-			}
-			else if (type.IsValueType)
-			{
-				Title = $"{name} Struct";
-			}
-			else if (type.IsSubclassOf(typeof(Delegate)))
-			{
-				Title = $"{name} Delegate";
-			}
-			else
-			{
-				Title = $"{name} Class";
-			}
-		}
+            var name = DocUtilities.GetDisplayTitle(type, false);
 
-		public override void Render(PageTree parent, MarkdownWriter writer)
-		{
-			writer.WriteHeader(1, Title);
-			writer.WriteParagraph($"**Namespace:** {Type.Namespace}");
-			var inheritance = DocUtilities.GetInheritanceString(Type);
-			if (!String.IsNullOrEmpty(inheritance))
-				writer.WriteParagraph($"**Inheritance:** {inheritance}");
-			writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
-			writer.WriteHeader(2, "Signature");
-			writer.WriteCodeBlock("csharp", DocUtilities.GetClassSignature(Type));
-			
-			var methods = Type.GetMethods().OrderBy(m => m.Name).ToArray();
-			if (methods.Length > 0)
-			{
-				writer.WriteHeader(2, "Methods");
-				foreach (var methodGroup in methods.Where(m => !m.IsSpecialName).GroupBy(m => m.Name))
-				{
-					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(methodGroup.Key)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(methodGroup.Key)}.md)");
-					bool isStatic = methodGroup.All(m => m.IsStatic);
-					if (isStatic) sbLink.Append(" (static)");
-					writer.WriteLine(sbLink.ToString());
-				}
-			}
-			
-			var props = Type.GetProperties()
-				.Where(p => p.GetIndexParameters().Length == 0)
-				.OrderBy(p => p.Name)
-				.ToArray();
-			if (props.Length > 0)
-			{
-				writer.WriteHeader(2, "Properties");
-				foreach (var prop in props)
-				{
-					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(prop.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(prop.Name)}.md)");
-					bool isStatic = prop.CanRead && prop.GetGetMethod(true).IsStatic || prop.CanWrite && prop.GetSetMethod(true).IsStatic;
-					if (isStatic) sbLink.Append(" (static)");
-					writer.WriteLine(sbLink.ToString());
-				}
-			}
+            if (type.IsEnum)
+            {
+                Title = $"{name} Enum";
+            }
+            else if (type.IsInterface)
+            {
+                Title = $"{name} Interface";
+            }
+            else if (type.IsValueType)
+            {
+                Title = $"{name} Struct";
+            }
+            else if (type.IsSubclassOf(typeof(Delegate)))
+            {
+                Title = $"{name} Delegate";
+            }
+            else
+            {
+                Title = $"{name} Class";
+            }
+        }
 
-			var fields = Type.GetFields()
-				.Where(f => !f.IsSpecialName)
-				.OrderBy(f => f.Name)
-				.ToArray();
-			if (fields.Length > 0)
-			{
-				writer.WriteHeader(2, "Fields");
-				foreach (var field in fields)
-				{
-					var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(field.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(field.Name)}.md)");
-					if (field.IsStatic) sbLink.Append(" (static)");
-					writer.WriteLine(sbLink.ToString());
-				}
-			}
+        public override void Render(PageTree parent, MarkdownWriter writer)
+        {
+            writer.WriteHeader(1, Title);
+            writer.WriteParagraph($"**Namespace:** {Type.Namespace}");
+            var inheritance = DocUtilities.GetInheritanceString(Type);
+            if (!String.IsNullOrEmpty(inheritance))
+                writer.WriteParagraph($"**Inheritance:** {inheritance}");
+            writer.WriteParagraph(Docs?.Summary ?? "(No Description)");
+            writer.WriteHeader(2, "Signature");
+            writer.WriteCodeBlock("csharp", DocUtilities.GetClassSignature(Type));
 
-			// TODO: Events
-			//writer.WriteHeader(2, "Events");
+            var ctors = Type.GetConstructors().OrderBy(c => c.Name).ToArray();
+            if (ctors.Length > 0)
+            {
+                writer.WriteHeader(2, "Constructors");
+                if (Args.MethodGroupsTable)
+                {
+                    writer.WriteLine("|**Name**|**Summary**|");
+                    writer.WriteLine("|---|---|");
+                }
+                var ctorNum = 1;
+                foreach (var ctor in ctors)
+                {
+                    if (Args.MethodGroupsTable)
+                    {
+                        var anchor = "";
+                        if (ctorNum > 1) anchor = $"#{DocUtilities.GetAnchor(DocUtilities.GetMethodSignature(ctor, false, false))}";
+                        var sbLink = new StringBuilder();
+                        sbLink.Append($"[{DocUtilities.GetMethodSignature(ctor, false, false)}]");
+                        sbLink.Append($"({DocUtilities.GetURLTitle(Type)}/ctors.md{anchor})");
+                        bool isStatic = ctor.IsStatic;
+                        if (isStatic) sbLink.Append(" (static)");
+
+                        var summary = "";
+                        var doc = _prjDocs[ID.GetIDString(ctor)];
+                        if (doc != null && !string.IsNullOrEmpty(doc.Summary))
+                            summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
+
+                        writer.WriteLine($"|{sbLink.ToString()}|{summary}|");
+                    }
+                    else
+                    {
+                        var sbLink = new StringBuilder($"[{DocUtilities.GetMethodSignature(ctor, false, true)}]({DocUtilities.GetURLTitle(Type)}/ctors.md)");
+                        bool isStatic = ctor.IsStatic;
+                        if (isStatic) sbLink.Append(" (static)");
+
+                        writer.WriteLine($"- {sbLink.ToString()}");                        
+                    }
+
+                    ++ctorNum;
+                }
+            }
+
+            var methods = Type.GetMethods().OrderBy(m => m.Name).ToArray();
+            if (methods.Length > 0)
+            {
+                writer.WriteHeader(2, "Methods");
+                if (Args.MethodGroupsTable)
+                {
+                    writer.WriteLine("|**Name**|**Summary**|");
+                    writer.WriteLine("|---|---|");
+                }
+                foreach (var methodGroup in methods.Where(m => !m.IsSpecialName).GroupBy(m => m.Name))
+                {
+                    if (Args.MethodGroupsTable)
+                    {
+                        foreach (var (method, idx) in methodGroup
+                            .OrderBy(m => m.GetParameters().Length)
+                            .Select((method, idx) => (method, idx)))
+                        {
+                            var anchor = "";
+                            if (idx > 0) anchor = $"#{DocUtilities.GetAnchor(DocUtilities.GetMethodSignature(method, false, false))}";
+                            var sbLink = new StringBuilder();
+                            sbLink.Append($"[{DocUtilities.GetIdentifier(methodGroup.Key)}]");
+                            sbLink.Append($"({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(methodGroup.Key)}.md{anchor})");
+                            bool isStatic = method.IsStatic;
+                            if (isStatic) sbLink.Append(" (static)");
+
+                            var summary = "";
+                            var doc = _prjDocs[ID.GetIDString(method)];
+                            if (doc != null && !string.IsNullOrEmpty(doc.Summary))
+                                summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
+
+                            writer.WriteLine($"|{sbLink.ToString()}|{summary}|");
+                        }
+                    }
+                    else
+                    {
+                        var sbLink = new StringBuilder($"[{DocUtilities.GetIdentifier(methodGroup.Key)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(methodGroup.Key)}.md)");
+                        bool isStatic = methodGroup.All(m => m.IsStatic);
+                        if (isStatic) sbLink.Append(" (static)");
+
+                        writer.WriteLine($"- {sbLink.ToString()}");
+                    }
+                }
+            }
+
+            var props = Type.GetProperties()
+                .Where(p => p.GetIndexParameters().Length == 0)
+                .OrderBy(p => p.Name)
+                .ToArray();
+            if (props.Length > 0)
+            {
+                writer.WriteHeader(2, "Properties");
+                if (Args.PropertiesTable)
+                {
+                    writer.WriteLine("|**Name**|**Summary**|");
+                    writer.WriteLine("|---|---|");
+                }
+                foreach (var prop in props)
+                {
+                    var sbLink = new StringBuilder($"[{DocUtilities.GetIdentifier(prop.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(prop.Name)}.md)");
+                    bool isStatic = prop.CanRead && prop.GetGetMethod(true).IsStatic || prop.CanWrite && prop.GetSetMethod(true).IsStatic;
+                    if (isStatic) sbLink.Append(" (static)");
+                    if (Args.PropertiesTable)
+                    {
+                        var summary = "";
+                        var doc = _prjDocs[ID.GetIDString(prop)];
+                        if (doc != null && !string.IsNullOrEmpty(doc.Summary))
+                            summary = doc.Summary.Replace("|", "\\|").Replace("\n", "<br/>");
+                        writer.WriteLine($"|{sbLink.ToString()}|{summary}");
+                    }
+                    else
+                        writer.WriteLine($"- {sbLink.ToString()}");
+                }
+            }
+
+            var fields = Type.GetFields()
+                .Where(f => !f.IsSpecialName)
+                .OrderBy(f => f.Name)
+                .ToArray();
+            if (fields.Length > 0)
+            {
+                writer.WriteHeader(2, "Fields");
+                foreach (var field in fields)
+                {
+                    var sbLink = new StringBuilder($"- [{DocUtilities.GetIdentifier(field.Name)}]({DocUtilities.GetURLTitle(Type)}/{DocUtilities.GetIdentifier(field.Name)}.md)");
+                    if (field.IsStatic) sbLink.Append(" (static)");
+                    writer.WriteLine(sbLink.ToString());
+                }
+            }
+
+            // TODO: Events
+            //writer.WriteHeader(2, "Events");
 
 
-			var operators = Type.GetMethods()
-				.Where(m => m.Name.StartsWith("op_") && m.Name != "op_Explicit" && m.Name != "op_Implicit")
-				.ToArray();
-			if (operators.Length > 0)
-			{
-				writer.WriteHeader(2, "Operators");
-				foreach (var op in operators)
-				{
-					writer.WriteLine($"- [{DocUtilities.GetOperatorSymbol(op.Name)}]({DocUtilities.GetURLTitle(Type)}/{op.Name}.md)");
-				}
-			}
+            var operators = Type.GetMethods()
+                .Where(m => m.Name.StartsWith("op_") && m.Name != "op_Explicit" && m.Name != "op_Implicit")
+                .ToArray();
+            if (operators.Length > 0)
+            {
+                writer.WriteHeader(2, "Operators");
+                foreach (var op in operators)
+                {
+                    writer.WriteLine($"- [{DocUtilities.GetOperatorSymbol(op.Name)}]({DocUtilities.GetURLTitle(Type)}/{op.Name}.md)");
+                }
+            }
 
-			writer.WriteHeader(2, "Conversions");
-		}
-	}
+            writer.WriteHeader(2, "Conversions");
+        }
+    }
 }

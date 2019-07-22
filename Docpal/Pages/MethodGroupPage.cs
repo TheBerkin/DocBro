@@ -76,6 +76,19 @@ namespace Docpal.Pages
 						}
 						writer.WriteLine();
 					}
+
+                    if (docs.Returns != null)
+                    {
+                        writer.WriteHeader(3, "Returns");
+                        writer.WriteLine(docs.Returns);
+                    }
+
+                    if (docs.Remarks != null)
+                    {
+                        writer.WriteHeader(3, "Remarks");
+                        writer.WriteLine(docs.Remarks);
+                    }
+
 				}
 			}
 		}
