@@ -47,7 +47,7 @@ namespace Docpal.Pages
             writer.WriteHeader(1, Title);
             foreach (var (ctor, idx) in _ctors.Select((ctor, idx) => (ctor, idx)))
             {
-                if (idx > 0)
+                if (Args.MethodGroupsSpacing && idx > 0)
                 {
                     writer.WriteLine();                    
                     writer.WriteLine("<p>&nbsp;</p>");

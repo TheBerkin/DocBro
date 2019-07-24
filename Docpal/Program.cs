@@ -12,10 +12,15 @@ namespace Docpal
 			var paths = Args.GetPaths();
 			if (paths.Length == 0 || Args.Help)
 			{
-				Console.WriteLine($"Usage: {AppDomain.CurrentDomain.FriendlyName} [OPTIONS]... <path_to_dll> -out <output_folder>");
+				Console.WriteLine($"Usage: {AppDomain.CurrentDomain.FriendlyName} [OPTIONS]... <dll_pathfilename>");
                 Console.WriteLine();
                 Console.WriteLine($"Options:");
+                Console.WriteLine($"  -out <path>    Specifies the path where the docs will be saved.");
+                Console.WriteLine($"  -xml <path>    Specifies a custom XML documentation path.");
+                Console.WriteLine($"  --slim         Specifies that the docs will be combined into a single .md file.");
+                Console.WriteLine($"  --noxml        Don't use XML.");
                 Console.WriteLine($"  --mgtable      methods groups in type page will reported in a table with summary foreach method in the group");
+                Console.WriteLine($"  --mgspace      space vertically each method when reported in groups");
                 Console.WriteLine($"  --proptable    properties in type page will reported in a table with summary foreach");
 				return;
 			}
