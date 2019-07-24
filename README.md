@@ -24,13 +24,13 @@ Boom, you have your docs. *It's that easy!*
 - Install the tool:
 
 ```sh
-dotnet tool install -g netcore-docpal
+dotnet tool install -g docpal
 ```
 
 - To update if already installed:
 
 ```sh
-dotnet tool update -g netcore-docpal
+dotnet tool update -g docpal
 ```
 
 ## What Docpal offers
