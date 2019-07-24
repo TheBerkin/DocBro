@@ -565,7 +565,7 @@ namespace Docpal
             // e.g. Dictionary<string, int>
             else if (bareType.IsGenericType)
             {
-                if (includeNamespace)
+                if (includeNamespace && !string.IsNullOrEmpty(bareType.Namespace))
                 {
                     sb.Append($"{bareType.Namespace}.");
                 }
@@ -588,7 +588,7 @@ namespace Docpal
             // e.g. System.String
             else
             {
-                if (includeNamespace) sb.Append($"{bareType.Namespace}.");
+                if (includeNamespace && !string.IsNullOrEmpty(bareType.Namespace)) sb.Append($"{bareType.Namespace}.");
                 sb.Append(bareName);
             }
 
