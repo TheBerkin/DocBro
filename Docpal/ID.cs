@@ -76,24 +76,27 @@ namespace Docpal
         {
             var sb = new StringBuilder();
             var rawName = method.IsConstructor ? "#ctor" : method.Name;
-            sb.Append($"{ConstructIDString(method.DeclaringType)}.{rawName}");
+            sb.Append($"{ConstructIDString(method.DeclaringType, constructor: method.IsConstructor)}.{rawName}");
             var plist = method.GetParameters();
             if (method.IsGenericMethod)
-                sb.Append($"``{plist.Where(r => r.ParameterType.IsGenericType).Count()}");
+            {
+                var prefix = method.IsConstructor ? "`" : "``";
+                sb.Append($"{prefix}{plist.Where(r => r.ParameterType.IsGenericType).Count()}");
+            }
             if (plist.Length > 0)
             {
                 sb.Append("(");
                 for (int i = 0; i < plist.Length; i++)
                 {
                     if (i > 0) sb.Append(",");
-                    sb.Append(ConstructIDString(plist[i].ParameterType));
+                    sb.Append(ConstructIDString(plist[i].ParameterType, constructor: method.IsConstructor));
                 }
                 sb.Append(")");
             }
             return sb.ToString();
         }
 
-        private static string ConstructIDString(Type type)
+        private static string ConstructIDString(Type type, bool constructor = false)
         {
             var sb = new StringBuilder();
             var elementType = type.GetElementType();
@@ -104,7 +107,8 @@ namespace Docpal
             // e.g. T
             if (type.IsGenericParameter)
             {
-                sb.Append($"``{type.GenericParameterPosition}");
+                var prefix = constructor ? "`" : "``";
+                sb.Append($"{prefix}{type.GenericParameterPosition}");
             }
             // e.g. Dictionary<string, int>
             else if (type.IsConstructedGenericType)
@@ -117,7 +121,7 @@ namespace Docpal
                     {
                         sb.Append(',');
                     }
-                    sb.Append(ConstructIDString(type.GenericTypeArguments[i]));
+                    sb.Append(ConstructIDString(type.GenericTypeArguments[i], constructor));
                 }
                 sb.Append('}');
             }
