@@ -22,134 +22,137 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
 namespace Docpal
 {
-	/// <summary>
-	/// Provides methods for generating ID strings from reflected types and members.
-	/// <para>
-	/// For information on how these ID strings work, see here: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
-	/// </para>
-	/// </summary>
-	static class ID
-	{
-		public static string GetIDString(Type type)
-		{
-			return $"T:{ConstructIDString(type)}";
-		}
+    /// <summary>
+    /// Provides methods for generating ID strings from reflected types and members.
+    /// <para>
+    /// For information on how these ID strings work, see here: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
+    /// </para>
+    /// </summary>
+    static class ID
+    {
+        public static string GetIDString(Type type)
+        {
+            return $"T:{ConstructIDString(type)}";
+        }
 
-		public static string GetIDString(MethodBase method)
-		{
-			return $"M:{ConstructIDString(method)}";
-		}
+        public static string GetIDString(MethodBase method)
+        {
+            return $"M:{ConstructIDString(method)}";
+        }
 
-		public static string GetIDString(FieldInfo field)
-		{
-			return $"F:{ConstructIDString(field.DeclaringType)}.{field.Name}";
-		}
+        public static string GetIDString(FieldInfo field)
+        {
+            return $"F:{ConstructIDString(field.DeclaringType)}.{field.Name}";
+        }
 
-		public static string GetIDString(PropertyInfo property)
-		{
-			var sb = new StringBuilder();
-			sb.Append($"P:{ConstructIDString(property.DeclaringType)}.{property.Name}");
+        public static string GetIDString(PropertyInfo property)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"P:{ConstructIDString(property.DeclaringType)}.{property.Name}");
 
-			// Check if it's an indexer
-			var indexParams = property.GetIndexParameters();
-			if (indexParams.Length > 0)
-			{
-				sb.Append("(");
-				for (int i = 0; i < indexParams.Length; i++)
-				{
-					if (i > 0) sb.Append(",");
-					sb.Append(ConstructIDString(indexParams[i].ParameterType));
-				}
-				sb.Append(")");
-			}
+            // Check if it's an indexer
+            var indexParams = property.GetIndexParameters();
+            if (indexParams.Length > 0)
+            {
+                sb.Append("(");
+                for (int i = 0; i < indexParams.Length; i++)
+                {
+                    if (i > 0) sb.Append(",");
+                    sb.Append(ConstructIDString(indexParams[i].ParameterType));
+                }
+                sb.Append(")");
+            }
 
-			return sb.ToString();
-		}
+            return sb.ToString();
+        }
 
-		private static string ConstructIDString(MethodBase method)
-		{
-			var sb = new StringBuilder();
-			var rawName = method.IsConstructor ? "#ctor" : method.Name;
-			sb.Append($"{ConstructIDString(method.DeclaringType)}.{rawName}");
-			var plist = method.GetParameters();
-			if (plist.Length > 0)
-			{
-				sb.Append("(");
-				for (int i = 0; i < plist.Length; i++)
-				{
-					if (i > 0) sb.Append(",");
-					sb.Append(ConstructIDString(plist[i].ParameterType));
-				}
-				sb.Append(")");
-			}
-			return sb.ToString();
-		}
+        private static string ConstructIDString(MethodBase method)
+        {
+            var sb = new StringBuilder();
+            var rawName = method.IsConstructor ? "#ctor" : method.Name;
+            sb.Append($"{ConstructIDString(method.DeclaringType)}.{rawName}");
+            var plist = method.GetParameters();
+            if (method.IsGenericMethod)
+                sb.Append($"``{plist.Where(r => r.ParameterType.IsGenericType).Count()}");
+            if (plist.Length > 0)
+            {
+                sb.Append("(");
+                for (int i = 0; i < plist.Length; i++)
+                {
+                    if (i > 0) sb.Append(",");
+                    sb.Append(ConstructIDString(plist[i].ParameterType));
+                }
+                sb.Append(")");
+            }
+            return sb.ToString();
+        }
 
-		private static string ConstructIDString(Type type)
-		{
-			var sb = new StringBuilder();
-			var elementType = type.GetElementType();
-			var bareName = type.IsArray
-				? elementType.Name
-				: type.Name;
+        private static string ConstructIDString(Type type)
+        {
+            var sb = new StringBuilder();
+            var elementType = type.GetElementType();
+            var bareName = type.IsArray
+                ? elementType.Name
+                : type.Name;
 
-			// e.g. T
-			if (type.IsGenericParameter)
-			{
-				sb.Append($"``{type.GenericParameterPosition}");
-			}
-			// e.g. Dictionary<string, int>
-			else if (type.IsConstructedGenericType)
-			{	
-				sb.Append($"{type.Namespace}.{bareName.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture))}");
-				sb.Append('{');
-				for (int i = 0; i < type.GenericTypeArguments.Length; i++)
-				{
-					if (i > 0 && type.GenericTypeArguments.Length > 1)
-					{
-						sb.Append(',');
-					}
-					sb.Append(ConstructIDString(type.GenericTypeArguments[i]));
-				}
-				sb.Append('}');
-			}
-			// e.g. System.String
-			else
-			{
-				sb.Append($"{type.Namespace}.{bareName}");
-			}
+            // e.g. T
+            if (type.IsGenericParameter)
+            {
+                sb.Append($"``{type.GenericParameterPosition}");
+            }
+            // e.g. Dictionary<string, int>
+            else if (type.IsConstructedGenericType)
+            {
+                sb.Append($"{type.Namespace}.{bareName.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture))}");
+                sb.Append('{');
+                for (int i = 0; i < type.GenericTypeArguments.Length; i++)
+                {
+                    if (i > 0 && type.GenericTypeArguments.Length > 1)
+                    {
+                        sb.Append(',');
+                    }
+                    sb.Append(ConstructIDString(type.GenericTypeArguments[i]));
+                }
+                sb.Append('}');
+            }
+            // e.g. System.String
+            else
+            {
+                sb.Append($"{type.Namespace}.{bareName}");
+            }
 
-			// Handle array notation
-			if (type.IsArray)
-			{
-				if (elementType.IsPointer) sb.Append('*');
-				if (elementType.IsByRef) sb.Append('@');
-				int rank = type.GetArrayRank();
-				if (rank == 1)
-				{
-					sb.Append("[]");
-				}
-				else
-				{
-					sb.Append('[');
-					for (int i = 0; i < rank; i++)
-					{
-						if (i > 0) sb.Append(',');
-						sb.Append("0:");
-					}
-					sb.Append(']');
-				}
-			}
+            // Handle array notation
+            if (type.IsArray)
+            {
+                if (elementType.IsPointer) sb.Append('*');
+                if (elementType.IsByRef) sb.Append('@');
+                int rank = type.GetArrayRank();
+                if (rank == 1)
+                {
+                    sb.Append("[]");
+                }
+                else
+                {
+                    sb.Append('[');
+                    for (int i = 0; i < rank; i++)
+                    {
+                        if (i > 0) sb.Append(',');
+                        sb.Append("0:");
+                    }
+                    sb.Append(']');
+                }
+            }
 
-			if (type.IsPointer) sb.Append('*');
-			if (type.IsByRef) sb.Append('@');
+            if (type.IsPointer) sb.Append('*');
+            if (type.IsByRef) sb.Append('@');
 
-			return sb.ToString();
-		}
-	}
+            return sb.ToString();
+        }
+    }
 }
