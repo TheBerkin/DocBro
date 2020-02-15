@@ -18,6 +18,21 @@ docpal Rant.dll -out ./docs
 
 Boom, you have your docs. *It's that easy!*
 
+## Install
+
+- Requirements: [Download NET Core SDK](https://dotnet.microsoft.com/download)
+- Install the tool:
+
+```sh
+dotnet tool install -g docpal
+```
+
+- To update if already installed:
+
+```sh
+dotnet tool update -g docpal
+```
+
 ## What Docpal offers
 
 ### Get started in minutes instead of hours
@@ -48,13 +63,32 @@ Docpal can be run from a terminal or integrated into your build process to run a
 
 Here are the options it can currently use:
 
-|Option|Description|
-|------|-----------|
-|`-out [path]`|Specifies the path where the docs will be saved.|
-|`-xml [path]`|Specifies a custom XML documentation path.|
-|`--slim`|Specifies that the docs will be combined into a single .md file.|
-|`--noxml`|Don't use XML.|
+```
+Usage: Docpal [OPTIONS]... <dll_pathfilename>
 
-## Compiling
+Options:
+  -out <path>    Specifies the path where the docs will be saved.
+  -xml <path>    Specifies a custom XML documentation path.
+  --slim         Specifies that the docs will be combined into a single .md file.
+  --noxml        Don't use XML.
+  --mgtable      methods groups in type page will reported in a table with summary foreach method in the group
+  --proptable    properties in type page will reported in a table with summary foreach
+```
 
-Docpal is written in C# 7 and requires Visual Studio 2017 to compile.
+### Include netcore assemblies
+
+To produce documentation from a netcore library you may need to include referenced dlls while building it:
+
+```sh
+dotnet build /p:CopyLocalLockFileAssemblies=true
+```
+
+## Compiling and running
+
+Docpal is written in C# 7 and requires Visual Studio 2017 or Visual Studio Code with dotnet core to compile.
+
+```sh
+cd Docpal
+dotnet build -c Release
+dotnet Docpal/bin/Release/netcoreapp2.2/Docpal.dll
+```

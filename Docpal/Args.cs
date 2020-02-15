@@ -41,7 +41,8 @@ namespace Docpal
         public static readonly bool Help;
 
         public static readonly bool MethodGroupsTable;
-        public static readonly bool PropertiesTable;
+        public static readonly bool MethodGroupsSpacing;
+        public static readonly bool PropertiesTable;        
 
         static Args()
         {
@@ -74,6 +75,7 @@ namespace Docpal
                 {
                     var flag = args[i].TrimStart('-');
                     if (flag == "mgtable") MethodGroupsTable = true;
+                    else if (flag == "mgspace") MethodGroupsSpacing = true;
                     else if (flag == "proptable") PropertiesTable = true;
                     Flags.Add(flag);
                 }
